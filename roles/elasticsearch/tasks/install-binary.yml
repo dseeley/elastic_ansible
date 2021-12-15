@@ -38,11 +38,13 @@
     when: es_link_stat.stat.exists and es_link_stat.stat.lnk_source == '/opt/elasticsearch-{{es_version}}'
 
   - name: Get Elasticsearch artifact
+    become: yes
     get_url:
-      url: "{{es_artifact_location}}/elasticsearch-{{es_version}}.tar.gz"
+      url: "{{es_artifact_location}}/elasticsearch-{{es_version}}-linux-{{ansible_architecture}}.tar.gz"
       dest: "/opt/elasticsearch-{{es_version}}.tar.gz"
 
   - name: Extract the Elasticsearch artifact
+    become: yes
     unarchive:
       remote_src: true
       src: "/opt/elasticsearch-{{es_version}}.tar.gz"
@@ -51,6 +53,7 @@
 
   # 'owner' and 'group' directives in unarchive do not work for tar.gz files
   - name: Change ownership of the ES dir
+    become: yes
     file:
       state: directory
       recurse: true
@@ -60,6 +63,7 @@
     notify: restart elasticsearch
 
   - name: Create the ES link
+    become: yes
     file:
       src: "/opt/elasticsearch-{{es_version}}"
       dest: "{{es_home}}"

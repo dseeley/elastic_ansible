@@ -1,21 +1,18 @@
 ---
 
-- include: users.yml
-  tags: users
+- include: hostconfig.yml
 
 - include: install-binary.yml
-  tags: binary
 
 - include: install-plugins.yml
-  tags: plugins
 
 - include: install-config.yml
-  tags: config
 
 
 ## Fail if ES doesn't start up (assuming we asked it to)
 - block:
   - meta: flush_handlers
+
   - wait_for:
       host: localhost
       port: 9200
@@ -30,4 +27,23 @@
         {{ service_elasticsearch_status.stdout }}
         {{ service_elasticsearch_status.stderr }}
     when: service_elasticsearch_status is failed
+
+
+  - name: Apply ES templates
+    become: yes
+    uri:
+      url: "http://localhost:9200/_template/{{item['name']}}"
+      method: PUT
+      status_code: 200
+#      user: "{{es_api_basic_auth_username | default(omit)}}"
+#      password: "{{es_api_basic_auth_password | default(omit)}}"
+#      force_basic_auth: yes
+      body_format: json
+      body: "{{ item['content'] }}"
+      validate_certs: no
+    with_items: "{{ es_mapping_templates }}"
+    notify: load-templates
+    when: es_mapping_templates is defined
+    delegate_to:
+
   when: es_restart_on_change and es_start_service

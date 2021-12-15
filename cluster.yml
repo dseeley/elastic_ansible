@@ -1,0 +1,47 @@
+---
+
+- name: clusterverse | Deploy the cluster
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - { name: "Get dependent roles via ansible-galaxy", local_action: "command ansible-galaxy install --ignore-errors -r requirements.yml", tags: ["always"] }
+
+#    - { include_role: { name: "clusterverse/_dependencies", apply: { tags: ["always"] } }, tags: ["always"], when: "clean is defined" }                       #So that elasticsearch/clean has the cluster variables defined
+#    - { include_role: { name: "elasticsearch/clean", apply: { tags: ["clusterverse_clean"] } }, tags: ["clusterverse_clean"], when: "clean is defined" }
+    - { include_role: { name: "clusterverse/clean", apply: { tags: ["clusterverse_clean"]} }, tags: ["clusterverse_clean"], when: "clean is defined" }
+    - { include_role: { name: "clusterverse/create", apply: { tags: ["clusterverse_create"]} }, tags: ["clusterverse_create"] }
+    - { include_role: { name: "clusterverse/dynamic_inventory", apply: { tags: ["clusterverse_dynamic_inventory"]} }, tags: ["clusterverse_dynamic_inventory"] }
+    - { name: "clusterverse | Copy ansible_ssh_private_key_file", local_action: "copy content={{cluster_vars[buildenv].ssh_connection_cfg.host.ansible_ssh_private_key_file}} dest='id_rsa_ansible_ssh_private_key_file' mode='0600'", when: "cluster_vars[buildenv].ssh_connection_cfg.host.ansible_ssh_private_key_file is defined", no_log: yes, tags: ["always"] }
+    - { name: "clusterverse | Copy bastion sshkey", local_action: "copy content={{cluster_vars[buildenv].ssh_connection_cfg.bastion.ssh_priv_key}} dest='id_rsa_bastion' mode='0600'", when: "cluster_vars[buildenv].ssh_connection_cfg.bastion.ssh_priv_key is defined", no_log: yes, tags: ["always"] }
+
+- name: clusterverse | Wait for SSH connections
+  hosts: all
+  gather_facts: no
+  tasks: [ {wait_for_connection: "", tags: ["always"] } ]
+
+- name: clusterverse | Configure the cluster
+  hosts: all:!not_target_hosts
+  tasks: [ { include_role: { name: "clusterverse/config", apply: { tags: ["clusterverse_config"]} }, tags: ["clusterverse_config"] } ]
+
+
+###### Elasticsearch roles
+- name: Install elasticsearch
+  hosts: all
+  tasks:
+    - { include_role: { name: "common", apply: { tags: ["elasticsearch_common"]} }, tags: ["elasticsearch_common"] }
+    - { include_role: { name: "elasticsearch", apply: { tags: ["elasticsearch_elasticsearch"]} }, tags: ["elasticsearch_elasticsearch"] }
+
+- name: Test elasticsearch
+  hosts: es-data[0]
+  become: false
+  gather_facts: false
+  tasks:
+    - { include_role: { name: "elasticsearch/test", apply: { tags: ["elasticsearch_test"]} }, tags: ["elasticsearch_test"] }
+######
+
+
+- name: clusterverse | Perform cluster readiness operations
+  hosts: localhost
+  connection: local
+  tasks: [ { include_role: { name: "clusterverse/readiness", apply: { tags: ["clusterverse_readiness"]} }, tags: ["clusterverse_readiness"] } ]

@@ -1,0 +1,55 @@
+---
+
+es_artifact_location: "https://artifacts.elastic.co/downloads/elasticsearch"
+es_version: "7.16.1"
+es_user: elasticsearch
+es_group: elasticsearch
+es_home: "/opt/elasticsearch"
+es_pid_dir: "/var/run/elasticsearch"
+es_log_dir: "/var/log/elasticsearch"
+es_data_dir: "/elasticsearch"
+es_conf_dir: "{{es_home}}/config"
+es_max_open_files: 65536
+es_max_map_count: 262144
+es_extra_config: {
+  bootstrap.memory_lock: true,
+  action.destructive_requires_name: true,
+  thread_pool.search.queue_size: 10000,
+  cluster.routing.allocation.disk.threshold_enabled: false,
+  http.cors.enabled: true,
+  http.cors.allow-origin: "*"
+}
+es_index_codec: best_compression
+es_index_number_of_shards: 6
+es_index_number_of_replicas: 1
+es_refresh_interval: "30s"
+es_network_host: 0.0.0.0
+es_restart_on_change: true
+es_start_service: true
+#es_plugins:
+#  - plugin: mapper-size
+#  - plugin: ingest-geoip
+
+es_api_basic_auth_username: "{{es_user}}"
+es_api_basic_auth_password: "TODO:CHANGEME"
+
+openjdk_package_apt: openjdk-17-jre-headless
+
+
+es_mapping_templates:
+  - name: default
+    content: {
+      "index_patterns": ["*"],
+      "order": 0,
+      "settings": {
+        "index.codec": "{{es_index_codec}}",
+        "index.number_of_shards": "{{es_index_number_of_shards}}",
+        "index.number_of_replicas": "{{es_index_number_of_replicas}}",
+        "index.refresh_interval": "{{es_refresh_interval}}",
+        "index.mapping.ignore_malformed": true,
+        "index.mapping.coerce": true,
+        "index.mapping.total_fields.limit": 1500,
+        "index.auto_expand_replicas": false
+      },
+      version: 1
+    }
