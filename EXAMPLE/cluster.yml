@@ -26,12 +26,19 @@
 
 
 ###### Elasticsearch roles
-- name: Install elasticsearch
+- name: elasticsearch | sslca
+  hosts: all:localhost
+  tasks:
+    - { include_role: { name: "clusterverse/_dependencies", apply: { tags: ["always"] } }, tags: ["always"], when: "'clusterverse_config' not in ansible_run_tags" }      # If we --skip-tags=clusterverse_config, this will ensure the variables from /cluster_defs are loaded.
+    - { include_role: { name: "clusterverse/cluster_hosts", apply: { tags: ["always"] } }, tags: ["always"], when: "'clusterverse_create' not in ansible_run_tags" }      # If we --skip-tags=clusterverse_create, this will ensure cluster_suffix is defined.
+    - { include_role: { name: "elasticsearch/sslca", apply: { tags: ["elasticsearch_sslca"] } }, tags: ["elasticsearch_sslca"] }
+
+- name: elasticsearch | common
   hosts: all
   tasks:
     - { include_role: { name: "elasticsearch/_common", apply: { tags: ["elasticsearch_common"]} }, tags: ["elasticsearch_common"] }
 
-- name: Test elasticsearch
+- name: elasticsearch | test
   hosts: es-data[0]
   become: false
   gather_facts: false

@@ -2,10 +2,10 @@
 
 - name: Ensure the health status is green for all nodes in the cluster
   uri:
-    url: "http://localhost:9200/_cluster/health"
-    #    user: "{{es_username}}"
-    #    password: "{{es_password[buildenv]}}"
-    #    force_basic_auth: yes
+    url: "https://localhost:9200/_cluster/health"
+    user: "{{es_api_basic_auth_username | default(omit)}}"
+    password: "{{es_api_basic_auth_password | default(omit)}}"
+    force_basic_auth: yes
     method: GET
     validate_certs: no
   register: es_health
@@ -21,3 +21,5 @@
     es_health.json.delayed_unassigned_shards==0
   retries: 1000
   run_once: true
+
+- debug: msg={{es_health}}

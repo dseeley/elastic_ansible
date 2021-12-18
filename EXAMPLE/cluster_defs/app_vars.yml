@@ -30,10 +30,20 @@ es_start_service: true
 #  - plugin: mapper-size
 #  - plugin: ingest-geoip
 
-es_api_basic_auth_username: "{{es_user}}"
-es_api_basic_auth_password: "TODO:CHANGEME"
+es_ssl_certificate_path: "{{ es_conf_dir }}/certs"
+es_ssl_certificate_authority: "{{es_ssl_certificate_path}}/ca-crt.pem"
+es_ssl_certificate: "{{es_ssl_certificate_path}}/elasticsearch-crt.pem"
+es_ssl_key: "{{es_ssl_certificate_path}}/elasticsearch-key.pem"
 
-openjdk_package_apt: openjdk-17-jre-headless
+es_api_basic_auth_username: "elastic"
+es_api_basic_auth_password: "CHANGEME"
+
+builtin_user_creds:
+  "apm_system": ""
+  "kibana_system": "CHANGEME"
+  "logstash_system": ""
+  "beats_system": ""
+  "remote_monitoring_user": ""
 
 
 es_mapping_templates:

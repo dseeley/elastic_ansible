@@ -8,42 +8,47 @@
 
 - include: install-config.yml
 
+- include: certs.yml
 
-## Fail if ES doesn't start up (assuming we asked it to)
-- block:
-  - meta: flush_handlers
+- name: bootstrap.password
+  block:
+    - name: Create the keystore if it doesn't exist yet
+      command: "{{es_home}}/bin/elasticsearch-keystore create"
+      args: { creates: "{{ es_conf_dir }}/elasticsearch.keystore" }
 
-  - wait_for:
-      host: localhost
-      port: 9200
-      timeout: 30
-    register: service_elasticsearch_status
+    - name: Check if bootstrap.password in the keystore
+      shell: "{{es_home}}/bin/elasticsearch-keystore list bootstrap.password"
+      register: elasticsearch_keystore_list
 
-  - name: Report status of elasticsearch if not running
-    fail:
-      msg: |
-        service_elasticsearch_status is not running.
-        Output of `systemctl status elasticsearch`:
-        {{ service_elasticsearch_status.stdout }}
-        {{ service_elasticsearch_status.stderr }}
-    when: service_elasticsearch_status is failed
+    - name: Add bootstrap.password to keystore
+      shell: "printf {{ es_api_basic_auth_password }} | {{es_home}}/bin/elasticsearch-keystore add -x bootstrap.password"
+      notify: restart elasticsearch
+      when: "'bootstrap.password' not in elasticsearch_keystore_list.stdout_lines"
+  become: yes
+  become_user: "{{ es_user }}"
 
 
-  - name: Apply ES templates
-    become: yes
-    uri:
-      url: "http://localhost:9200/_template/{{item['name']}}"
-      method: PUT
-      status_code: 200
-#      user: "{{es_api_basic_auth_username | default(omit)}}"
-#      password: "{{es_api_basic_auth_password | default(omit)}}"
-#      force_basic_auth: yes
-      body_format: json
-      body: "{{ item['content'] }}"
-      validate_certs: no
-    with_items: "{{ es_mapping_templates }}"
-    notify: load-templates
-    when: es_mapping_templates is defined
-    delegate_to:
+- name: flush the handlers, forcing es (re)start
+  meta: flush_handlers
 
-  when: es_restart_on_change and es_start_service
+- name: wait for elastic port 9200 to be open
+  wait_for: host=localhost port=9200 timeout=30
+
+
+- include: users.yml
+
+
+- name: Apply ES templates
+  uri:
+    url: "https://localhost:9200/_template/{{item['name']}}"
+    method: PUT
+    status_code: 200
+    user: "{{es_api_basic_auth_username | default(omit)}}"
+    password: "{{es_api_basic_auth_password | default(omit)}}"
+    force_basic_auth: yes
+    body_format: json
+    body: "{{ item['content'] }}"
+    validate_certs: no
+  with_items: "{{ es_mapping_templates }}"
+  run_once: yes
+  when: es_mapping_templates is defined

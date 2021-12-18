@@ -5,6 +5,7 @@
   become: yes
   systemd:
     daemon_reload: yes
+  throttle: 1
 
 # Restart elasticsearch and ensure it is enabled
 - name: restart elasticsearch
@@ -13,9 +14,4 @@
     name: elasticsearch
     state: restarted
     enabled: yes
-  when: es_restart_on_change or es_start_service
-  notify: Wait for elasticsearch to startup
-
-- name: Wait for elasticsearch to startup
-  wait_for: host=localhost port=9200
-  changed_when: true
+  throttle: 1
