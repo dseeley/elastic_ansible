@@ -1,0 +1,65 @@
+---
+
+- name: hostconfig | swap disabling
+  block:
+    - name: hostconfig | Disable swap for current session
+      become: yes
+      command: swapoff -a
+
+    - name: hostconfig | Remove swapfile from /etc/fstab
+      become: yes
+      mount:
+        name: "{{ item }}"
+        fstype: swap
+        state: absent
+      with_items: ["swap", "none"]
+
+    - name: hostconfig | Set kernel swappiness to 0
+      become: yes
+      sysctl:
+        name: vm.swappiness
+        value: 0
+        sysctl_set: yes
+        state: present
+        reload: yes
+
+- name: hostconfig | set unlimited memlock ulimit
+  become: yes
+  pam_limits:
+    domain: "{{es_user}}"
+    limit_type: '-'
+    limit_item: memlock
+    value: unlimited
+    comment: "unlimited memory lock for {{es_user}}"
+  when: es_extra_config['bootstrap.memory_lock'] is defined  and  es_extra_config['bootstrap.memory_lock'] | bool
+
+- name: hostconfig | set nofile ulimit
+  become: yes
+  pam_limits:
+    domain: "{{es_user}}"
+    limit_type: '-'
+    limit_item: nofile
+    value: "{{es_max_open_files}}"
+    comment: "{{es_max_open_files}} for {{es_user}}"
+  when: es_max_open_files is defined
+
+- name: hostconfig | Create Elasticsearch unix group
+  become: yes
+  group:
+    name: "{{es_group}}"
+
+- name: hostconfig | Add the Elasticsearch user
+  become: yes
+  user:
+    name: "{{es_user}}"
+    groups: "{{es_group}}"
+    system: yes
+
+- name: "hostconfig | Change {{es_data_dir}} data directory ownership "
+  become: yes
+  file:
+    path: "{{es_data_dir}}"
+    name: "{{es_user}}"
+    group: "{{es_group}}"
+    mode: 0755
+    state: directory

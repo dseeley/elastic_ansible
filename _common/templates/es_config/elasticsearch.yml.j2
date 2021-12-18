@@ -38,4 +38,19 @@ cluster.initial_master_nodes: {{ initial_master_nodes }}
 discovery.zen.ping.unicast.hosts: {{ all_hosts_fqdn }}
 
 ## Prevent the "split brain" by configuring the majority of nodes (total number of master-eligible nodes / 2 + 1):
-#discovery.zen.minimum_master_nodes: 
+#discovery.zen.minimum_master_nodes:
+
+{#xpack.security.transport.ssl.enabled: true#}
+{#xpack.security.transport.ssl.verification_mode: "certificate"#}
+{#xpack.security.transport.ssl.key: "{{ es_ssl_certificate_path }}/{{ es_ssl_key | basename }}"#}
+{#xpack.security.transport.ssl.certificate: "{{ es_ssl_certificate_path }}/{{ es_ssl_certificate | basename }}"#}
+{#{% if es_ssl_certificate_authority %}#}
+{#xpack.security.transport.ssl.certificate_authorities: "{{ es_ssl_certificate_path }}/{{ es_ssl_certificate_authority | basename }}"#}
+{#{% endif %}#}
+{##}
+{#xpack.security.http.ssl.enabled: true#}
+{#xpack.security.http.ssl.key: "{{ es_ssl_certificate_path }}/{{ es_ssl_key | basename }}"#}
+{#xpack.security.http.ssl.certificate: "{{ es_ssl_certificate_path }}/{{ es_ssl_certificate | basename }}"#}
+{#{% if es_ssl_certificate_authority %}#}
+{#xpack.security.http.ssl.certificate_authorities: "{{ es_ssl_certificate_path }}/{{ es_ssl_certificate_authority | basename }}"#}
+{#{% endif %}#}

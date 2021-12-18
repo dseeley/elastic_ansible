@@ -29,8 +29,7 @@
 - name: Install elasticsearch
   hosts: all
   tasks:
-    - { include_role: { name: "common", apply: { tags: ["elasticsearch_common"]} }, tags: ["elasticsearch_common"] }
-    - { include_role: { name: "elasticsearch", apply: { tags: ["elasticsearch_elasticsearch"]} }, tags: ["elasticsearch_elasticsearch"] }
+    - { include_role: { name: "elasticsearch/_common", apply: { tags: ["elasticsearch_common"]} }, tags: ["elasticsearch_common"] }
 
 - name: Test elasticsearch
   hosts: es-data[0]
