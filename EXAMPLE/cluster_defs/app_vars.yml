@@ -1,5 +1,7 @@
 ---
 
+playbook_ca_yaml: "{{playbook_dir}}/cluster_defs/{{ cloud_type }}/{{ clusterid }}/{{ region }}/{{ buildenv }}/_ssl/ownca.yml"
+
 es_artifact_location: "https://artifacts.elastic.co/downloads/elasticsearch"
 es_version: "7.16.1"
 es_user: elasticsearch
@@ -24,8 +26,6 @@ es_index_number_of_shards: 6
 es_index_number_of_replicas: 1
 es_refresh_interval: "30s"
 es_network_host: 0.0.0.0
-es_restart_on_change: true
-es_start_service: true
 #es_plugins:
 #  - plugin: mapper-size
 #  - plugin: ingest-geoip
@@ -34,16 +34,23 @@ es_ssl_certificate_path: "{{ es_conf_dir }}/certs"
 es_ssl_certificate_authority: "{{es_ssl_certificate_path}}/ca-crt.pem"
 es_ssl_certificate: "{{es_ssl_certificate_path}}/elasticsearch-crt.pem"
 es_ssl_key: "{{es_ssl_certificate_path}}/elasticsearch-key.pem"
+es_ssl_client_authentication: "optional"      # Whether we require clients to user certificates to authenticate.  "required", "optional" or ""
 
 es_api_basic_auth_username: "elastic"
 es_api_basic_auth_password: "CHANGEME"
 
-builtin_user_creds:
+es_builtin_users:
   "apm_system": ""
   "kibana_system": "CHANGEME"
   "logstash_system": ""
   "beats_system": ""
   "remote_monitoring_user": ""
+
+es_users:
+  dougal:
+    password: "CHANGEME"
+    roles: ["superuser"]
+    full_name: "Dougal Seeley"
 
 
 es_mapping_templates:
@@ -63,3 +70,20 @@ es_mapping_templates:
       },
       version: 1
     }
+
+
+kibana_artifact_location: "https://artifacts.elastic.co/downloads/kibana"
+kibana_version: "{{es_version}}"
+kibana_user: kibana
+kibana_group: kibana
+kibana_home: "/opt/kibana"
+kibana_pid_dir: "/var/run/kibana"
+kibana_log_dir: "/var/log/kibana"
+kibana_conf_dir: "{{kibana_home}}/config"
+kibana_network_host: 0.0.0.0
+
+kibana_ssl_is_self_signed: true
+kibana_ssl_certificate_path: "{{ kibana_conf_dir }}/certs"
+kibana_ssl_certificate_authority: "{{kibana_ssl_certificate_path}}/ca-crt.pem"
+kibana_ssl_certificate: "{{kibana_ssl_certificate_path}}/kibana-crt.pem"
+kibana_ssl_key: "{{kibana_ssl_certificate_path}}/kibana-key.pem"

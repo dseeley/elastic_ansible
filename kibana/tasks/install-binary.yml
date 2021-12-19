@@ -1,0 +1,71 @@
+---
+
+- name: Check kibana installed version
+  stat:
+    path: "/opt/kibana-{{kibana_version}}-linux-{{ansible_architecture}}"
+  register: this_kibana_installed
+
+- name: Check any kibana installed
+  stat:
+    path: "{{kibana_home}}"
+  register: kibana_link_stat
+
+#- debug: msg={{this_kibana_installed.stat}}
+#- debug: msg={{kibana_link_stat.stat}}
+
+# If it's already installed and latest, do nothing
+# If it's not installed, install
+# If a different version is installed, stop the service and remove the soft link.
+- block:
+    - block:
+        - name: Stop/Disable kibana
+          service:
+            name: kibana
+            state: stopped
+            enabled: no
+
+        - name: Remove the kibana link
+          file:
+            path: "{{kibana_home}}"
+            state: absent
+      when: kibana_link_stat.stat.exists and kibana_link_stat.stat.lnk_source == '/opt/kibana-{{kibana_version}}'
+
+    - name: Get kibana artifact
+      become: yes
+      get_url:
+        url: "{{kibana_artifact_location}}/kibana-{{kibana_version}}-linux-{{ansible_architecture}}.tar.gz"
+        dest: "/opt/kibana-{{kibana_version}}-linux-{{ansible_architecture}}.tar.gz"
+
+    - name: Extract the kibana artifact
+      become: yes
+      unarchive:
+        remote_src: true
+        src: "/opt/kibana-{{kibana_version}}-linux-{{ansible_architecture}}.tar.gz"
+        dest: "/opt"
+      notify: restart kibana
+
+    # 'owner' and 'group' directives in unarchive do not work for tar.gz files
+    - name: Change ownership of the kibana dir
+      become: yes
+      file:
+        state: directory
+        recurse: true
+        path: "/opt/kibana-{{kibana_version}}-linux-{{ansible_architecture}}"
+        owner: "{{kibana_user}}"
+        group: "{{kibana_group}}"
+      notify: restart kibana
+
+    - name: Create the kibana link
+      become: yes
+      file:
+        src: "/opt/kibana-{{kibana_version}}-linux-{{ansible_architecture}}"
+        dest: "{{kibana_home}}"
+        state: link
+        mode: 0755
+        owner: "{{kibana_user}}"
+        group: "{{kibana_group}}"
+      notify: restart kibana
+
+  when: (not this_kibana_installed.stat.exists) or (not kibana_link_stat.stat.exists) or (kibana_link_stat.stat.exists and not kibana_link_stat.stat.lnk_source == kibana_loc)
+  vars:
+    kibana_loc: "/opt/kibana-{{kibana_version}}"

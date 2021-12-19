@@ -1,0 +1,48 @@
+---
+
+- name: Create pid, log and conf directories
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{kibana_user}}"
+    group: "{{kibana_group}}"
+    mode: "2755"
+  with_items:
+    - "{{kibana_pid_dir}}"
+    - "{{kibana_log_dir}}"
+    - "{{kibana_conf_dir}}"
+
+- name: Copy Systemd File
+  become: yes
+  template:
+    src: etc/systemd/system/kibana.service.j2
+    dest: /etc/systemd/system/kibana.service
+    mode: 0644
+    force: yes
+  notify:
+  - reload systemd configuration
+  - restart kibana
+
+- name: Copy main kibana config file
+  become: yes
+  template:
+    src: opt/kibana/config/kibana.yml.j2
+    dest: "{{kibana_conf_dir}}/kibana.yml"
+    owner: "{{kibana_user}}"
+    group: "{{kibana_group}}"
+    mode: '0644'
+    force: yes
+  notify: restart kibana
+
+- name: Copy tmpfiles.d
+  become: yes
+  copy:
+    content: |
+      d    {{ kibana_pid_dir }}   0755 {{ kibana_user }} {{ kibana_group }} - -
+    dest: "/usr/lib/tmpfiles.d/kibana.conf"
+    owner: "{{kibana_user}}"
+    group: "{{kibana_group}}"
+    mode: 0644
+    force: yes
+  notify: restart kibana

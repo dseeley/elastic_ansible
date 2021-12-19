@@ -1,0 +1,60 @@
+---
+
+- name: Update api user password in .security index (setting elastic password here disables the bootstrap.password)
+  become: yes
+  become_user: "{{es_user}}"
+  uri:
+    url: "https://localhost:9200/_security/user/{{es_api_basic_auth_username}}/_password"
+    method: POST
+    body_format: json
+    body: "{ \"password\":\"{{es_api_basic_auth_password}}\" }"
+    client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
+    client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
+    status_code: 200
+    user: "{{es_api_basic_auth_username}}"
+    password: "{{es_api_basic_auth_password}}"
+    force_basic_auth: yes
+    validate_certs: no
+  when: "'bootstrap.password' not in elasticsearch_keystore_list.stdout_lines"
+  run_once: yes
+
+- name: Update other builtin user creds in .security index
+  become: yes
+  become_user: "{{es_user}}"
+  uri:
+    url: "https://localhost:9200/_security/user/{{item.key}}/_password"
+    method: POST
+    body_format: json
+    body: "{ \"password\":\"{{item.value}}\" }"
+    client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
+    client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
+    status_code: 200
+    user: "{{es_api_basic_auth_username}}"
+    password: "{{es_api_basic_auth_password}}"
+    force_basic_auth: yes
+    validate_certs: no
+  run_once: yes
+  with_dict: "{{es_builtin_users}}"
+  when: "item.value != ''"
+
+- name: Add other users
+  become: yes
+  become_user: "{{es_user}}"
+  uri:
+    url: "https://localhost:9200/_security/user/{{item.key}}/"
+    method: POST
+    body_format: json
+    body:
+      password: "{{item.value['password']}}"
+      roles: "{{item.value['roles']}}"
+      full_name: "{{item.value['full_name']}}"
+    client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
+    client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
+    status_code: 200
+    user: "{{es_api_basic_auth_username}}"
+    password: "{{es_api_basic_auth_password}}"
+    force_basic_auth: yes
+    validate_certs: no
+  run_once: yes
+  with_dict: "{{es_users}}"
+

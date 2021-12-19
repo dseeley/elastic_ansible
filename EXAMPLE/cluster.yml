@@ -7,8 +7,8 @@
   tasks:
     - { name: "Get dependent roles via ansible-galaxy", local_action: "command ansible-galaxy install --ignore-errors -r requirements.yml", tags: ["always"] }
 
-#    - { include_role: { name: "clusterverse/_dependencies", apply: { tags: ["always"] } }, tags: ["always"], when: "clean is defined" }                       #So that elasticsearch/clean has the cluster variables defined
-#    - { include_role: { name: "elasticsearch/clean", apply: { tags: ["clusterverse_clean"] } }, tags: ["clusterverse_clean"], when: "clean is defined" }
+#    - { include_role: { name: "clusterverse/_dependencies", apply: { tags: ["always"] } }, tags: ["always"], when: "clean is defined" }                       #So that elastic/clean has the cluster variables defined
+#    - { include_role: { name: "elastic/clean", apply: { tags: ["clusterverse_clean"] } }, tags: ["clusterverse_clean"], when: "clean is defined" }
     - { include_role: { name: "clusterverse/clean", apply: { tags: ["clusterverse_clean"]} }, tags: ["clusterverse_clean"], when: "clean is defined" }
     - { include_role: { name: "clusterverse/create", apply: { tags: ["clusterverse_create"]} }, tags: ["clusterverse_create"] }
     - { include_role: { name: "clusterverse/dynamic_inventory", apply: { tags: ["clusterverse_dynamic_inventory"]} }, tags: ["clusterverse_dynamic_inventory"] }
@@ -25,25 +25,29 @@
   tasks: [ { include_role: { name: "clusterverse/config", apply: { tags: ["clusterverse_config"]} }, tags: ["clusterverse_config"] } ]
 
 
-###### Elasticsearch roles
-- name: elasticsearch | sslca
+###### elastic roles
+- name: elastic | ssl_ownca
   hosts: all:localhost
   tasks:
     - { include_role: { name: "clusterverse/_dependencies", apply: { tags: ["always"] } }, tags: ["always"], when: "'clusterverse_config' not in ansible_run_tags" }      # If we --skip-tags=clusterverse_config, this will ensure the variables from /cluster_defs are loaded.
     - { include_role: { name: "clusterverse/cluster_hosts", apply: { tags: ["always"] } }, tags: ["always"], when: "'clusterverse_create' not in ansible_run_tags" }      # If we --skip-tags=clusterverse_create, this will ensure cluster_suffix is defined.
-    - { include_role: { name: "elasticsearch/sslca", apply: { tags: ["elasticsearch_sslca"] } }, tags: ["elasticsearch_sslca"] }
+    - { include_role: { name: "elastic/ssl_ownca", apply: { tags: ["elastic_ssl_ownca"] } }, tags: ["elastic_ssl_ownca"] }
 
-- name: elasticsearch | common
-  hosts: all
+- name: elastic | elasticsearch
+  hosts: es-data:es-master
   tasks:
-    - { include_role: { name: "elasticsearch/_common", apply: { tags: ["elasticsearch_common"]} }, tags: ["elasticsearch_common"] }
+    - { include_role: { name: "elastic/elasticsearch/data_master_node", apply: { tags: ["elastic_elasticsearch"]} }, tags: ["elastic_elasticsearch"] }
 
-- name: elasticsearch | test
+- name: elastic | elasticsearch test
   hosts: es-data[0]
-  become: false
   gather_facts: false
   tasks:
-    - { include_role: { name: "elasticsearch/test", apply: { tags: ["elasticsearch_test"]} }, tags: ["elasticsearch_test"] }
+    - { include_role: { name: "elastic/elasticsearch/test", apply: { tags: ["elastic_test"]} }, tags: ["elastic_test"] }
+
+- name: elastic | kibana
+  hosts: kibana
+  tasks:
+    - { include_role: { name: "elastic/kibana", apply: { tags: ["elastic_kibana"]} }, tags: ["elastic_kibana"] }
 ######
 
 

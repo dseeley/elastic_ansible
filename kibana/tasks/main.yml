@@ -1,0 +1,20 @@
+---
+
+- name: hostconfig | Create kibana unix group
+  become: yes
+  group:
+    name: "{{kibana_group}}"
+
+- name: hostconfig | Add the kibana user
+  become: yes
+  user:
+    name: "{{kibana_user}}"
+    groups: "{{kibana_group}}"
+    system: yes
+
+
+- include: install-binary.yml
+
+- include: install-config.yml
+
+- include: certs.yml

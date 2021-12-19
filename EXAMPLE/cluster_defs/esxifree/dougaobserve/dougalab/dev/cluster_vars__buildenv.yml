@@ -21,7 +21,21 @@ cluster_vars:
           - { mountpoint: "{{es_data_dir}}", volume_size: 5, provisioning_type: "thin", fstype: "ext4" }
         flavor: { num_cpus: "2", memory_mb: "4096" }
         version: "{{es_version | regex_replace('\\.', '_') | default('')}}"
-        networks: [ &data_NET1 { networkName: "VM Network", virtualDev: vmxnet3 } ]
+        networks: [ &es-data_NET1 { networkName: "VM Network", virtualDev: vmxnet3 } ]
+        vms_by_az: { a: 1, b: 1, c: 0 }
+
+#      es-master:
+#        auto_volumes: []
+#        flavor: { num_cpus: "2", memory_mb: "2048" }
+#        version: "{{es_version | regex_replace('\\.', '_') | default('')}}"
+#        networks: [ &es-master_NET1 { networkName: "VM Network", virtualDev: vmxnet3 } ]
+#        vms_by_az: { a: 1, b: 1, c: 0 }
+
+      kibana:
+        auto_volumes: []
+        flavor: { num_cpus: "2", memory_mb: "2048" }
+        version: "{{kibana_version | regex_replace('\\.', '_') | default('')}}"
+        networks: [ &kibana_NET1 { networkName: "VM Network", virtualDev: vmxnet3 } ]
         vms_by_az: { a: 1, b: 1, c: 0 }
 
 _host_ssh_connection_cfg: { <<: *host_ssh_connection_cfg }

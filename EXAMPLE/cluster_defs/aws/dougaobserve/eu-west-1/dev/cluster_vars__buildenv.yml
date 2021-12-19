@@ -26,12 +26,24 @@ cluster_vars:
 #    nsupdate_cfg: {server: "", key_name: "", key_secret: ""}      # If you're using bind9 (or other nsupdate-compatible 'dns_server')
 
     hosttype_vars:
-      sysdisks2:
+      es-data:
         auto_volumes:
-          - { device_name: "/dev/sda1", mountpoint: "/", fstype: "ext4", volume_type: "gp2", volume_size: 8, encrypted: True, delete_on_termination: true }
-          - { device_name: "/dev/sdf", mountpoint: "{{es_data_dir}}", fstype: "ext4", volume_type: "gp2", volume_size: 5, encrypted: True, delete_on_termination: true }
-        flavor: t3a.nano
+          - { device_name: "/dev/sda1", mountpoint: "/", fstype: "ext4", volume_type: "gp3", volume_size: 8, encrypted: True, delete_on_termination: true }
+          - { device_name: "/dev/sdf", mountpoint: "{{es_data_dir}}", fstype: "ext4", volume_type: "gp3", volume_size: 5, encrypted: True, delete_on_termination: true }
+        flavor: t3a.small
         version: "{{es_version | regex_replace('\\.', '_') | default('')}}"
+        vms_by_az: { a: 1, b: 1, c: 1 }
+
+#      es-master:
+#        auto_volumes: []
+#        flavor: t3a.small
+#        version: "{{es_version | regex_replace('\\.', '_') | default('')}}"
+#        vms_by_az: { a: 1, b: 1, c: 1 }
+
+      kibana:
+        auto_volumes: []
+        flavor: t3a.small
+        version: "{{kibana_version | regex_replace('\\.', '_') | default('')}}"
         vms_by_az: { a: 1, b: 1, c: 1 }
 
 _host_ssh_connection_cfg: { <<: *host_ssh_connection_cfg }
