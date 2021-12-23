@@ -18,6 +18,7 @@ es_extra_config: {
   action.destructive_requires_name: true,
   thread_pool.search.queue_size: 10000,
   cluster.routing.allocation.disk.threshold_enabled: false,
+  cluster.routing.allocation.awareness.attributes: "zone",
   http.cors.enabled: true,
   http.cors.allow-origin: "*"
 }
@@ -71,6 +72,7 @@ es_mapping_templates:
       version: 1
     }
 
+###### Kibana ######
 
 kibana_artifact_location: "https://artifacts.elastic.co/downloads/kibana"
 kibana_version: "{{es_version}}"
@@ -82,8 +84,12 @@ kibana_log_dir: "/var/log/kibana"
 kibana_conf_dir: "{{kibana_home}}/config"
 kibana_network_host: 0.0.0.0
 
+kibana_ssl_path: "{{ kibana_conf_dir }}/certs"
 kibana_ssl_is_self_signed: true
-kibana_ssl_certificate_path: "{{ kibana_conf_dir }}/certs"
-kibana_ssl_certificate_authority: "{{kibana_ssl_certificate_path}}/ca-crt.pem"
-kibana_ssl_certificate: "{{kibana_ssl_certificate_path}}/kibana-crt.pem"
-kibana_ssl_key: "{{kibana_ssl_certificate_path}}/kibana-key.pem"
+kibana_ssl_ca_path: "{{kibana_ssl_path}}/ca-crt.pem"
+kibana_ssl_crt_path: "{{kibana_ssl_path}}/kibana-crt.pem"
+kibana_ssl_key_path: "{{kibana_ssl_path}}/kibana-key.pem"
+
+#If not using self-signed certificated (should vault-encrypt the key)
+kibana_ssl_crt_content: ""
+kibana_ssl_key_content: ""

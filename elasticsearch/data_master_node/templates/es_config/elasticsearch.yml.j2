@@ -9,6 +9,7 @@ cluster.name: {{ cluster_name }}
 
 node.name: {{cluster_name}}-{{ansible_hostname}}
 
+node.attr.zone: {{ hostvars[inventory_hostname]['regionzone'] }}
 
 ## Path to directory where to store the data (separate multiple locations by comma):
 path.data: {{ es_data_dir }}
@@ -42,7 +43,7 @@ discovery.zen.ping.unicast.hosts: {{ es_unicast_nodes }}
 xpack.security.enabled: true
 
 xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.verification_mode: "certificate"
+xpack.security.transport.ssl.verification_mode: "full"      # "full", "certificate" or "none"
 xpack.security.transport.ssl.key: "{{ es_ssl_key }}"
 xpack.security.transport.ssl.certificate: "{{ es_ssl_certificate }}"
 {% if es_ssl_certificate_authority %}

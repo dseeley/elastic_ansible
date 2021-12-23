@@ -44,6 +44,6 @@ cluster_vars:
         auto_volumes: []
         flavor: t3a.small
         version: "{{kibana_version | regex_replace('\\.', '_') | default('')}}"
-        vms_by_az: { a: 1, b: 1, c: 1 }
+        vms_by_az: { a: 1, b: 0, c: 0 }
 
 _host_ssh_connection_cfg: { <<: *host_ssh_connection_cfg }

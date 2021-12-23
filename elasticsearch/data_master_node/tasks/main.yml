@@ -28,11 +28,11 @@
   become_user: "{{ es_user }}"
 
 
-- name: flush the handlers, forcing es (re)start
+- name: flush the handlers, forcing (re)start
   meta: flush_handlers
 
 - name: wait for elastic port 9200 to be open
-  wait_for: host=localhost port=9200 timeout=30
+  wait_for: host=localhost port=9200 timeout=120
 
 
 - include: users.yml

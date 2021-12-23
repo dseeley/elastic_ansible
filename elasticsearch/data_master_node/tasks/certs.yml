@@ -8,15 +8,18 @@
 - name: certs | Generate CSR
   community.crypto.openssl_csr_pipe:
     privatekey_content: "{{r__openssl_privatekey_pipe.privatekey}}"
-    key_usage: ["cRLSign", "digitalSignature", "keyCertSign", "keyEncipherment"]
+    key_usage: ["digitalSignature", "keyEncipherment", "nonRepudiation"]
     key_usage_critical: yes
     extended_key_usage: ["clientAuth", "serverAuth"]
     extended_key_usage_critical: yes
-    subject: { CN: "{{ansible_hostname}}" }
+    subject_ordered: [ { DC: "{{cluster_vars.dns_user_domain}}" }, { CN: "{{ansible_hostname}}.{{cluster_vars.dns_user_domain}}" } ]    #NOTE: Order is important for comparison with plugins.security.nodes_dn definition in opensearch.yml (it is reversed).  If this is out of order, you get "Illegal parameter in http or transport request found" in the logs, and no inter-node connection.
     subject_alt_name: |-
-        {%- if (cluster_vars.dns_server is not defined  or  cluster_vars.dns_server == "") -%}
-          IP:{{ansible_host}}
-        {%- endif -%}
+      {% set SANs = [] %}
+      {% set _ = SANs.extend(['DNS:' + ansible_hostname,'DNS:' + ansible_hostname + '.' + cluster_vars.dns_user_domain]) -%}
+      {% if (cluster_vars.dns_server is not defined  or  cluster_vars.dns_server == "") %}
+      {% set _ = SANs.append('IP:' + ansible_host) %}
+      {%- endif %}
+      {{ SANs }}
   register: r__openssl_csr_pipe
 
 - name: certs | Generate the self-signed certificate
@@ -37,7 +40,7 @@
       copy:
         content: "{{ item.val }}"
         dest: "{{ item.path }}"
-        mode:  "{{ item.mode }}"
+        mode: "{{ item.mode }}"
         owner: "{{es_user}}"
         group: "{{es_group}}"
         force: no               # Only create these if they don't already exist

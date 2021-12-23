@@ -27,6 +27,6 @@ cluster_vars:
     inv_service_id: "{{app_class}}"
     inv_cluster_id: "{{cluster_name}}"
     inv_cluster_type: "{{app_name}}"
-  ssh_whitelist: &ssh_whitelist ['10.0.0.0/8', '82.69.177.168/29']
+  ssh_whitelist: &ssh_whitelist ['10.0.0.0/8']
 _ssh_whitelist: *ssh_whitelist
 _dns_nameserver_zone: *dns_nameserver_zone
