@@ -15,11 +15,13 @@
         extended_key_usage_critical: yes
         subject_ordered: [ { CN: "{{ansible_hostname}}.{{cluster_vars.dns_user_domain}}" } ]
         subject_alt_name: |-
-          {% set SANs = [] %}
-          {% set _ = SANs.extend(['DNS:' + ansible_hostname,'DNS:' + ansible_hostname + '.' + cluster_vars.dns_user_domain]) -%}
-          {% if (cluster_vars.dns_server is not defined  or  cluster_vars.dns_server == "") %}
-          {% set _ = SANs.append('IP:' + ansible_host) %}
-          {%- endif %}
+          {% set SANs = ['DNS:' + ansible_hostname,'IP:' + ansible_default_ipv4.address] %}
+          {%- if (cluster_vars.dns_user_domain is defined  and  cluster_vars.dns_user_domain != "") -%}
+            {%- set _ = SANs.append('DNS:' + ansible_hostname + '.' + cluster_vars.dns_user_domain) -%}
+          {%- endif -%}
+          {%- if (ansible_default_ipv4.address != ansible_host) -%}
+            {%- set _ = SANs.append('IP:' + ansible_host) -%}
+          {%- endif -%}
           {{ SANs }}
       register: r__openssl_csr_pipe
 
@@ -44,7 +46,7 @@
             mode:  "{{ item.mode }}"
             owner: "{{kibana_user}}"
             group: "{{kibana_group}}"
-            force: no               # Only create these if they don't already exist
+            force: "{{ 'yes' if recreate_certs is defined and recreate_certs|bool else 'no' }}"
           no_log: true
           with_items:
             - { path: '{{kibana_ssl_ca_path}}', val: "{{ssl_ownca['ca-crt.pem']}}", mode: '0644'}
@@ -67,7 +69,7 @@
         mode:  "{{ item.mode }}"
         owner: "{{kibana_user}}"
         group: "{{kibana_group}}"
-        force: no               # Only create these if they don't already exist
+        force: "{{ 'yes' if recreate_certs is defined and recreate_certs|bool else 'no' }}"
       no_log: true
       with_items:
         - { path: '{{kibana_ssl_crt_path}}', val: "{{kibana_ssl_crt_content}}", mode: '0644'}

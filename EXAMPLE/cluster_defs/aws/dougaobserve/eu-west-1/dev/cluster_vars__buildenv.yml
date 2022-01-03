@@ -30,21 +30,21 @@ cluster_vars:
         auto_volumes:
           - { device_name: "/dev/sda1", mountpoint: "/", fstype: "ext4", volume_type: "gp3", volume_size: 8, encrypted: True, delete_on_termination: true }
           - { device_name: "/dev/sdf", mountpoint: "{{es_data_dir}}", fstype: "ext4", volume_type: "gp3", volume_size: 10, encrypted: True, delete_on_termination: true }
-        flavor: t3a.medium
+        flavor: t4g.medium
         version: "{{es_version | regex_replace('\\.', '_') | default('')}}"
-        vms_by_az: { a: 1, b: 1, c: 1 }
+        vms_by_az: { a: 1, b: 1, c: 0 }
 
       es-master:
         auto_volumes:
           - { device_name: "/dev/sda1", mountpoint: "/", fstype: "ext4", volume_type: "gp3", volume_size: 8, encrypted: True, delete_on_termination: true }
           - { device_name: "/dev/sdf", mountpoint: "{{es_data_dir}}", fstype: "ext4", volume_type: "gp3", volume_size: 2, encrypted: True, delete_on_termination: true }
-        flavor: t3a.small
+        flavor: t4g.small
         version: "{{es_version | regex_replace('\\.', '_') | default('')}}"
         vms_by_az: { a: 1, b: 1, c: 1 }
 
       kibana:
         auto_volumes: []
-        flavor: t3a.small
+        flavor: t4g.small
         version: "{{kibana_version | regex_replace('\\.', '_') | default('')}}"
         vms_by_az: { a: 1, b: 0, c: 0 }
 

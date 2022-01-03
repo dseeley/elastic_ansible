@@ -84,7 +84,7 @@
   copy:
     content: |
       {% for node in es_master_eligible_nodes %}
-      {{ node['hostname'] if (cluster_vars.dns_server is defined and cluster_vars.dns_server != "") else node['ip'] }}
+      {{ node['hostname'] + '.' + cluster_vars.dns_user_domain if (cluster_vars.inventory_ip=='private' and cluster_vars.dns_server is defined and cluster_vars.dns_server != "") else hostvars[node['hostname']]['ansible_default_ipv4']['address'] }}
       {% endfor %}
     dest: "{{es_conf_dir}}/unicast_hosts.txt"
     owner: "{{es_user}}"

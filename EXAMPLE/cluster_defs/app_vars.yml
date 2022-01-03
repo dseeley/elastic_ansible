@@ -2,10 +2,8 @@
 
 playbook_ca_yaml: "{{playbook_dir}}/cluster_defs/{{ cloud_type }}/{{ clusterid }}/{{ region }}/{{ buildenv }}/_ssl/ownca.yml"
 
-#use_local_artifact: true
-
 es_artifact_location: "https://artifacts.elastic.co/downloads/elasticsearch"
-es_version: "7.16.1"
+es_version: "7.16.2"
 es_user: elasticsearch
 es_group: elasticsearch
 es_home: "/opt/elasticsearch"
@@ -37,7 +35,7 @@ es_ssl_certificate_path: "{{ es_conf_dir }}/certs"
 es_ssl_certificate_authority: "{{es_ssl_certificate_path}}/ca-crt.pem"
 es_ssl_certificate: "{{es_ssl_certificate_path}}/elasticsearch-crt.pem"
 es_ssl_key: "{{es_ssl_certificate_path}}/elasticsearch-key.pem"
-es_ssl_client_authentication: "optional"      # Whether we require clients to user certificates to authenticate.  "required", "optional" or ""
+es_ssl_client_authentication: "optional"      # Whether we require clients to present user certificates to authenticate.  "required", "optional" or "none"
 
 es_api_basic_auth_username: "elastic"
 es_api_basic_auth_password: "CHANGEME"
