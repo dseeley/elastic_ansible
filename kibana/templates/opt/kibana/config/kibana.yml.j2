@@ -32,7 +32,7 @@ server.maxPayloadBytes: 5242880
 server.name: "{{cluster_name}}-{{ansible_hostname}}"
 
 # The URLs of the Elasticsearch instances to use for all your queries.
-elasticsearch.hosts: {{ es_master_nodes | map('regex_replace', '^(.*)$', 'https://' + '\\1' + ':9200')}}
+elasticsearch.hosts: {{(es_master_eligible_nodes | map(attribute='hostname')) if (cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (es_master_eligible_nodes | map(attribute='ip')) | map('regex_replace', '^(.*)$', 'https://' + '\\1' + ':9200')}}
 
 # Kibana uses an index in Elasticsearch to store saved searches, visualizations and
 # dashboards. Kibana creates a new index if the index doesn't already exist.

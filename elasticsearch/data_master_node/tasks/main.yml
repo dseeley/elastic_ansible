@@ -1,14 +1,19 @@
 ---
 
-- include: hostconfig.yml
+- include_tasks:
+    file: hostconfig.yml
 
-- include: install-binary.yml
+- include_tasks:
+    file: install-binary.yml
 
-- include: install-plugins.yml
+- include_tasks:
+    file: install-plugins.yml
 
-- include: install-config.yml
+- include_tasks:
+    file: install-config.yml
 
-- include: certs.yml
+- include_tasks:
+    file: certs.yml
 
 - name: bootstrap.password
   block:
@@ -16,7 +21,7 @@
       command: "{{es_home}}/bin/elasticsearch-keystore create"
       args: { creates: "{{ es_conf_dir }}/elasticsearch.keystore" }
 
-    - name: Check if bootstrap.password in the keystore
+    - name: Check whether bootstrap.password is in the keystore
       shell: "{{es_home}}/bin/elasticsearch-keystore list bootstrap.password"
       register: elasticsearch_keystore_list
 
@@ -27,15 +32,18 @@
   become: yes
   become_user: "{{ es_user }}"
 
+- debug: msg="force elasticsearch restart"
+  changed_when: yes
+  notify: restart elasticsearch
+  when: force_elasticsearch_restart is defined  and  force_elasticsearch_restart|bool
 
-- name: flush the handlers, forcing (re)start
+
+- name: flush the handlers, (re)starting elasticsearch, if necessary
   meta: flush_handlers
 
-- name: wait for elastic port 9200 to be open
-  wait_for: host=localhost port=9200 timeout=120
 
-
-- include: users.yml
+- include_tasks:
+    file: users.yml
 
 
 - name: Apply elasticsearch templates

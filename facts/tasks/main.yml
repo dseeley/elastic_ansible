@@ -1,23 +1,42 @@
 ---
 
-- name: Get elasticsearch hosts when DNS in use
-  block:
-    - name: Get all master/data nodes
-      set_fact:
-        es_unicast_nodes: "[{% for node in ansible_play_hosts | sort %}{% if hostvars[node]['hosttype'] in ['es-data', 'es-master'] %}'{{ node }}.{{cluster_vars.dns_user_domain}}'{{',' if not loop.last else ''}}{% endif %}{% endfor %}]"
+- name: Get master-eligible nodes
+  set_fact:
+    es_master_eligible_nodes: |
+      {%- set res = [] -%}
+      {%- set master_eligible_hostnames = (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | sort -%}
+      {%- for master_eligible_hostname in master_eligible_hostnames -%}
+        {%- set _ = res.append({'hostname': master_eligible_hostname, 'ip': hostvars[master_eligible_hostname]['ansible_host']}) -%}
+      {%- endfor %}
+      {{res}}
 
-    - name: Get master(-equivalent) elasticsearch hosts
-      set_fact:
-        es_master_nodes: "{{ (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | map('regex_replace', '^(.*)$', '\\1.' + cluster_vars.dns_user_domain) | sort }}"
-  when: (cluster_vars.dns_server is defined and cluster_vars.dns_server != "")
+- name: es_master_eligible_nodes
+  debug: msg={{es_master_eligible_nodes}}
+  run_once: yes
 
-- name: Get elasticsearch hosts when DNS not in use
-  block:
-    - name: Get all master/data nodes when not using DNS
-      set_fact:
-        es_unicast_nodes: "[{% for node in ansible_play_hosts | sort %}{% if hostvars[node]['hosttype'] in ['es-data', 'es-master'] %}'{{ hostvars[node]['ansible_host'] }}'{{',' if not loop.last else ''}}{% endif %}{% endfor %}]"
-
-    - name: Get master(-equivalent) elasticsearch hosts
-      set_fact:
-        es_master_nodes: "{{ (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | map('extract', hostvars, 'ansible_host') | sort }}"
-  when: (cluster_vars.dns_server is not defined  or  cluster_vars.dns_server == "")
+## old - for reference.
+#- name: Get elasticsearch hosts when DNS in use
+#  block:
+#    - name: Get all master/data nodes (when using DNS)
+#      set_fact:
+#        es_unicast_nodes: "[{% for node in query('inventory_hostnames','es-data,es-master', errors='ignore') | sort %}'{{ node }}.{{cluster_vars.dns_user_domain}}'{{',' if not loop.last else ''}}{% endfor %}]"
+#
+#    - name: Get master-eligible nodes (when using DNS)
+#      set_fact:
+#        es_master_eligible_nodes: "{{ (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | map('regex_replace', '^(.*)$', '\\1.' + cluster_vars.dns_user_domain) | sort }}"
+#  when: (cluster_vars.dns_server is defined and cluster_vars.dns_server != "")
+#
+#- name: Get elasticsearch hosts when DNS not in use
+#  block:
+#    - name: Get all master/data nodes (when not using DNS)
+#      set_fact:
+#        es_unicast_nodes: "[{% for node in query('inventory_hostnames','es-data,es-master', errors='ignore') | sort %}'{{ hostvars[node]['ansible_host'] }}'{{',' if not loop.last else ''}}{% endfor %}]"
+#
+#    - name: Get master-eligible nodes (when not using DNS)
+#      set_fact:
+#        es_master_eligible_nodes: "{{ (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | map('extract', hostvars, 'ansible_host') | sort }}"
+#  when: (cluster_vars.dns_server is not defined  or  cluster_vars.dns_server == "")
+#
+#- name: es_unicast_nodes
+#  debug: msg={{es_unicast_nodes}}
+#  run_once: yes

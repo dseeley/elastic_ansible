@@ -1,0 +1,104 @@
+---
+
+- name: elasticsearch/redeploy_predelete | hosts_to_remove
+  debug: msg="{{hosts_to_remove | default('')}}"
+
+- block:
+    - name: elasticsearch/redeploy_predelete | Ensure the cluster is healthy before starting
+      include_role:
+        name: elastic/elasticsearch/test
+
+    - name: elasticsearch/redeploy_predelete | hostnames_to_remove
+      debug: msg={{hostnames_to_remove}}
+
+    - name: elasticsearch/redeploy_predelete | Add the hosts_to_remove to voting_config_exclusions (make master-ineligible), and verify
+      block:
+        - name: elasticsearch/redeploy_predelete | voting_config_exclusions_nodes
+          debug: msg="{{ voting_config_exclusions_nodes }}"
+
+        - name: elasticsearch/redeploy_predelete | Add the hosts_to_remove to voting_config_exclusions (make master-ineligible)
+          uri:
+            url: "https://localhost:9200/_cluster/voting_config_exclusions?node_names={{ voting_config_exclusions_nodes | join(',') }}&timeout=2m"
+            user: "{{es_api_basic_auth_username | default(omit)}}"
+            password: "{{es_api_basic_auth_password | default(omit)}}"
+            force_basic_auth: yes
+            method: POST
+            client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
+            client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
+            validate_certs: no
+
+        - name: elasticsearch/redeploy_predelete | Verify voting_config_exclusions
+          uri:
+            url: "https://localhost:9200/_cluster/state?filter_path=metadata.cluster_coordination.voting_config_exclusions"
+            user: "{{es_api_basic_auth_username | default(omit)}}"
+            password: "{{es_api_basic_auth_password | default(omit)}}"
+            force_basic_auth: yes
+            method: GET
+            client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
+            client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
+            validate_certs: no
+          register: r__uri__voting_config_exclusions
+
+        - name: elasticsearch/redeploy_predelete | r__uri__voting_config_exclusions
+          debug: msg="{{ r__uri__voting_config_exclusions }}"
+
+        - assert: { that: "r__uri__voting_config_exclusions | json_query(\"json.metadata.cluster_coordination.voting_config_exclusions[].node_name\") | difference(voting_config_exclusions_nodes) | length == 0", fail_msg: "voting_config_exclusions not set correctly", success_msg: "voting_config_exclusions set" }
+      vars:
+        voting_config_exclusions_nodes: "{{ (es_master_eligible_nodes | map(attribute='hostname') | intersect(hostnames_to_remove))}}"
+
+    - name: elasticsearch/redeploy_predelete | Move the shards off all the hosts_to_remove
+      uri:
+        url: "https://localhost:9200/_cluster/settings"
+        user: "{{es_api_basic_auth_username | default(omit)}}"
+        password: "{{es_api_basic_auth_password | default(omit)}}"
+        force_basic_auth: yes
+        method: PUT
+        body_format: json
+        body:
+          "transient": { "cluster.routing.allocation.exclude._name": "{{hostnames_to_remove | join(',')}}" }
+        client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
+        client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
+        validate_certs: no
+
+    - name: elasticsearch/redeploy_predelete | Wait until the shards are off all the hosts_to_remove
+      uri:
+        url: "https://localhost:9200/_cat/shards?format=json"
+        user: "{{es_api_basic_auth_username | default(omit)}}"
+        password: "{{es_api_basic_auth_password | default(omit)}}"
+        force_basic_auth: yes
+        client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
+        client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
+        method: GET
+        validate_certs: no
+      register: es_shards
+      until: >
+        es_shards.json is defined and
+        ((es_shards.json | json_query(jq1)) | length == 0)
+      retries: 1000
+      vars:
+        jq1: "[?contains({{hostnames_to_remove + [null]}}, node)]"
+
+    - name: elasticsearch/redeploy_predelete | Ensure the cluster is healthy before continuing
+      include_role:
+        name: elastic/elasticsearch/test
+  run_once: true
+  become: yes
+  delegate_to: "{{hostnames_to_remove[0]}}"
+  vars:
+    hostnames_to_remove: "{{hosts_to_remove | map(attribute='name') | list | unique }}"
+
+
+- name: elasticsearch/redeploy_predelete | update service_facts
+  service_facts:
+  delegate_to: "{{item.name}}"
+  delegate_facts: yes
+  loop: "{{hosts_to_remove}}"
+
+- name: elasticsearch/redeploy_predelete | Stop service
+  become: yes
+  service:
+    name: elasticsearch
+    state: stopped
+  delegate_to: "{{item.name}}"
+  loop: "{{hosts_to_remove}}"
+  when: "'elasticsearch.service' in hostvars[item.name]['services']"

@@ -2,6 +2,8 @@
 
 playbook_ca_yaml: "{{playbook_dir}}/cluster_defs/{{ cloud_type }}/{{ clusterid }}/{{ region }}/{{ buildenv }}/_ssl/ownca.yml"
 
+#use_local_artifact: true
+
 es_artifact_location: "https://artifacts.elastic.co/downloads/elasticsearch"
 es_version: "7.16.1"
 es_user: elasticsearch
@@ -26,7 +28,7 @@ es_index_codec: best_compression
 es_index_number_of_shards: 6
 es_index_number_of_replicas: 1
 es_refresh_interval: "30s"
-es_network_host: 0.0.0.0
+es_network_bind_host: 0.0.0.0
 #es_plugins:
 #  - plugin: mapper-size
 #  - plugin: ingest-geoip

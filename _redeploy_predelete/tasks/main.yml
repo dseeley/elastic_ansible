@@ -1,0 +1,22 @@
+---
+
+- name: elastic/redeploy_predelete | hosts_to_remove
+  debug: msg="{{hosts_to_remove | default([])}}"
+
+- set_fact:
+    hosts_to_remove_elasticsearch: "{{hosts_to_remove | json_query(\"[?contains(['es-data','es-master'], tagslabels.hosttype)]\")}}"
+
+- set_fact:
+    hosts_to_remove_kibana: "{{hosts_to_remove | json_query(\"[?contains(['kibana'], tagslabels.hosttype)]\")}}"
+
+- name: elastic/redeploy_predelete | delegate data/master nodes to elasticsearch predelete function
+  include_role:
+    name: elastic/elasticsearch/redeploy_predelete
+  vars:
+    hosts_to_remove: "{{hosts_to_remove_elasticsearch}}"       # NOTE: Not possible to put the json_query in here - issue with recursive loops on variables, but not facts.
+
+- name: elastic/redeploy_predelete | delegate kibana nodes to kibana predelete function
+  include_role:
+    name: elastic/kibana/redeploy_predelete
+  vars:
+    hosts_to_remove: "{{hosts_to_remove_kibana}}"       # NOTE: Not possible to put the json_query in here - issue with recursive loops on variables, but not facts.

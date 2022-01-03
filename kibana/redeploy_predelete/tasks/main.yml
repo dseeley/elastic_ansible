@@ -1,0 +1,19 @@
+---
+
+- name: kibana/redeploy_predelete | hosts_to_remove
+  debug: msg="{{hosts_to_remove | default('')}}"
+
+- name: update service_facts
+  service_facts:
+  delegate_to: "{{item.name}}"
+  delegate_facts: yes
+  loop: "{{hosts_to_remove}}"
+
+- name: kibana/redeploy_predelete | Stop service
+  become: yes
+  service:
+    name: kibana
+    state: stopped
+  delegate_to: "{{item.name}}"
+  loop: "{{hosts_to_remove}}"
+  when: "'kibana.service' in hostvars[item.name]['services']"

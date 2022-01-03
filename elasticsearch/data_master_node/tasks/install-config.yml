@@ -39,8 +39,11 @@
     mode: 0644
     force: yes
   notify:
-  - reload systemd configuration
   - restart elasticsearch
+
+- name: reload systemd configuration
+  become: yes
+  systemd: daemon_reload=yes
 
 - name: Copy jvm.options File for Instance
   become: yes
@@ -75,6 +78,19 @@
     mode: 0644
     force: yes
   notify: restart elasticsearch
+
+- name: Create unicast_hosts.txt (don't notify restart)
+  become: yes
+  copy:
+    content: |
+      {% for node in es_master_eligible_nodes %}
+      {{ node['hostname'] if (cluster_vars.dns_server is defined and cluster_vars.dns_server != "") else node['ip'] }}
+      {% endfor %}
+    dest: "{{es_conf_dir}}/unicast_hosts.txt"
+    owner: "{{es_user}}"
+    group: "{{es_group}}"
+    mode: 0644
+    force: yes
 
 - name: Copy sysctl.d/elasticsearch.conf
   become: yes

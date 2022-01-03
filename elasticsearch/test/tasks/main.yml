@@ -2,7 +2,6 @@
 
 - name: Ensure the health status is green for all nodes in the cluster
   become: yes
-  become_user: "{{es_user}}"
   uri:
     url: "https://localhost:9200/_cluster/health"
     user: "{{es_api_basic_auth_username | default(omit)}}"
@@ -18,11 +17,13 @@
     es_health.json is defined and
     es_health.json.status=='green' and
     es_health.json.initializing_shards==0 and
-    es_health.json.number_of_data_nodes==cluster_hosts_state | json_query('[?tagslabels.hosttype==`es-data`]') | length and
+    es_health.json.number_of_data_nodes==groups['es-data'] | length and
     es_health.json.relocating_shards==0 and
     es_health.json.unassigned_shards==0 and
     es_health.json.delayed_unassigned_shards==0
   retries: 1000
   run_once: true
 
-- debug: msg={{es_health}}
+- name: es_health
+  debug: msg={{es_health}}
+  run_once: true

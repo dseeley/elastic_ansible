@@ -5,11 +5,9 @@
 cluster.name: elasticsearch
 {% else %}
 cluster.name: {{ cluster_name }}
-{% endif %}
+{%- endif %}
 
-node.name: {{cluster_name}}-{{ansible_hostname}}
-
-node.attr.zone: {{ hostvars[inventory_hostname]['regionzone'] }}
+node.name: {{inventory_hostname}}
 
 ## Path to directory where to store the data (separate multiple locations by comma):
 path.data: {{ es_data_dir }}
@@ -17,25 +15,35 @@ path.data: {{ es_data_dir }}
 # Path to log files:
 path.logs: {{ es_log_dir }}
 
-network.host: {{ es_network_host }}
+network.bind_host: {{ es_network_bind_host }}
+network.publish_host: _site_
 
-node.data: {% if 'es-data' in group_names %}true{% else %}false{% endif %}
-node.ingest: {% if 'es-data' in group_names %}true{% else %}false{% endif %}
-
-{% if cluster_vars[buildenv].hosttype_vars['es-master'] is undefined %}
-node.master: true
-{% else %}
-node.master: {% if 'es-master' in group_names -%}true{%- else -%}false{% endif %}
-{% endif %}
+node.roles:
+{%- if 'es-data' in group_names %}
+  - data
+{%- endif %}
+{%- if inventory_hostname in (es_master_eligible_nodes | map(attribute='hostname')) %}
+  - master
+{%- endif %}
 
 {% if es_extra_config %}
 {{ es_extra_config | to_nice_yaml }}
 {% endif %}
 
-cluster.initial_master_nodes: {{ es_master_nodes }}
+{%- if es_extra_config['cluster.routing.allocation.awareness.attributes'] is defined and es_extra_config['cluster.routing.allocation.awareness.attributes'] == 'zone' %}
+node.attr.zone: {{ hostvars[inventory_hostname]['regionzone'] }}
+{% endif %}
 
-## Pass an initial list of hosts to perform discovery when new node is started (default list of hosts is ["127.0.0.1", "[::1]"]):
-discovery.zen.ping.unicast.hosts: {{ es_unicast_nodes }}
+{%- if inventory_hostname == es_master_eligible_nodes[0]['hostname'] -%}
+{#{%- if inventory_hostname in es_master_eligible_nodes | map(attribute='hostname') -%}#}
+# (https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-bootstrap-cluster.html#modules-discovery-bootstrap-cluster)
+# Technically this doesn't have to be set to all master-eligible nodes on all such nodes, if we don't mind the cluster being fault-intolerant during startup, and it's a pain to manage because it should be removed after cluster setup, and never added again.
+{#cluster.initial_master_nodes: {{(es_master_eligible_nodes | map(attribute='hostname')) if (cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (es_master_eligible_nodes | map(attribute='ip'))}}#}
+cluster.initial_master_nodes: {{ inventory_hostname }}
+{%- endif %}
+
+#Instead of defining discovery.seed_hosts statically here, set via a file ($ES_PATH_CONF/unicast_hosts.txt), which is automatically reloaded when changed (avoiding restarting ES each time).
+discovery.seed_providers: file
 
 ## Prevent the "split brain" by configuring the majority of nodes (total number of master-eligible nodes / 2 + 1):
 #discovery.zen.minimum_master_nodes:
@@ -43,17 +51,17 @@ discovery.zen.ping.unicast.hosts: {{ es_unicast_nodes }}
 xpack.security.enabled: true
 
 xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.verification_mode: "full"      # "full", "certificate" or "none"
+xpack.security.transport.ssl.verification_mode: "certificate"      # "full", "certificate" or "none"
 xpack.security.transport.ssl.key: "{{ es_ssl_key }}"
 xpack.security.transport.ssl.certificate: "{{ es_ssl_certificate }}"
-{% if es_ssl_certificate_authority %}
-xpack.security.transport.ssl.certificate_authorities: "{{ es_ssl_certificate_authority }}"
-{% endif %}
+{%- if es_ssl_certificate_authority %}
+xpack.security.transport.ssl.certificate_authorities: ["{{ es_ssl_certificate_authority }}"]
+{%- endif %}
 
 xpack.security.http.ssl.enabled: true
 xpack.security.http.ssl.key: "{{ es_ssl_key }}"
 xpack.security.http.ssl.certificate: "{{ es_ssl_certificate }}"
 xpack.security.http.ssl.client_authentication: "{{ es_ssl_client_authentication }}"
-{% if es_ssl_certificate_authority %}
-xpack.security.http.ssl.certificate_authorities: "{{ es_ssl_certificate_authority }}"
+{%- if es_ssl_certificate_authority %}
+xpack.security.http.ssl.certificate_authorities: ["{{ es_ssl_certificate_authority }}"]
 {% endif %}

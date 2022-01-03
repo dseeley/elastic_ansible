@@ -1,7 +1,7 @@
 ---
 
 - block:
-    ##This is no good - if it's already running, this starts up another instance to get the version, which may OOM.
+    ## This is no good - if it's already running, this starts up another instance to get the version, which may OOM.
     #- name: Check if elasticsearch is installed
     #  shell: "{{es_home}}/bin/elasticsearch --version | grep \"Version: {{es_version}}\""
     #  failed_when: es_install_check.rc > 1
@@ -9,47 +9,37 @@
     #  register: es_install_check
 
     - name: Check Elasticsearch installed version
-      stat:
-        path: "{{es_unzip_loc}}"
+      stat: path="{{es_unzip_loc}}"
       register: this_es_installed
 
+    #- debug: msg={{this_es_installed.stat}}
+
     - name: Check any Elasticsearch installed
-      stat:
-        path: "{{es_home}}"
+      stat: path="{{es_home}}"
       register: es_link_stat
 
-    #- debug: msg={{this_es_installed.stat}}
     #- debug: msg={{es_link_stat.stat}}
 
-    # If it's already installed and latest, do nothing
-    # If it's not installed, install
-    # If a different version is installed, stop the service and remove the soft link.
+#    - name: "Assert that installed version is same as requested version (we cannot perform safe (zero-downtime) upgrades by just running with a new version number)"
+#      assert: { that: "es_link_stat.stat.lnk_source == es_unzip_loc", fail_msg: "We cannot perform zero-downtime upgrades by just running with a new es_version number.  Please use redeploy.yml" }
+    - warn_str: msg="We cannot perform zero-downtime upgrades by just running with a new es_version number.  Please use redeploy.yml"
+      when: es_link_stat.stat.exists is defined and es_link_stat.stat.exists|bool  and  es_link_stat.stat.lnk_source != es_unzip_loc
+
     - block:
-        - block:
-            - name: Stop/Disable Elasticsearch
-              service:
-                name: elasticsearch
-                state: stopped
-                enabled: no
-
-            - name: Remove the elasticsearch link
-              file:
-                path: "{{es_home}}"
-                state: absent
-          when: es_link_stat.stat.exists and es_link_stat.stat.lnk_source == '{{es_unzip_loc}}'
-
         - name: Get Elasticsearch artifact
           become: yes
           get_url:
             url: "{{es_artifact_location}}/elasticsearch-{{es_version}}-linux-{{ansible_architecture}}.tar.gz"
             dest: "{{es_unzip_loc}}.tar.gz"
+          when: use_local_artifact is not defined
 
         - name: Extract the Elasticsearch artifact
           become: yes
           unarchive:
-            remote_src: true
-            src: "{{es_unzip_loc}}.tar.gz"
+            remote_src: "{{ 'true' if use_local_artifact is not defined else 'false' }}"
+            src: "{{es_unzip_loc if use_local_artifact is not defined else es_unzip_loc|basename}}.tar.gz"
             dest: /opt
+            creates: "{{es_unzip_loc}}"
           notify: restart elasticsearch
 
         # 'owner' and 'group' directives in unarchive do not work for tar.gz files
@@ -73,6 +63,6 @@
             owner: "{{es_user}}"
             group: "{{es_group}}"
           notify: restart elasticsearch
-      when: (not this_es_installed.stat.exists) or (not es_link_stat.stat.exists) or (es_link_stat.stat.exists and not es_link_stat.stat.lnk_source == es_unzip_loc)
+      when: (not this_es_installed.stat.exists) or (not es_link_stat.stat.exists)
   vars:
     es_unzip_loc: "/opt/elasticsearch-{{es_version}}"
