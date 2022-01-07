@@ -1,7 +1,7 @@
 ---
 
-#List currently installed plugins - ignore xpack if > v 2.0
-- name: Check installed elasticsearch plugins
+#List currently installed plugins
+- name: elasticsearch/install-plugins | Check installed elasticsearch plugins
   become: yes
   become_user: "{{es_user}}"
   shell: "{{es_home}}/bin/elasticsearch-plugin list | grep -vE 'x-pack'"
@@ -13,7 +13,7 @@
     CONF_DIR: "{{ es_conf_dir }}"
 
 # This removes any currently installed plugins (to prevent errors when reinstalling)
-- name: Remove elasticsearch plugins
+- name: elasticsearch/install-plugins | Remove elasticsearch plugins
   become: yes
   become_user: "{{es_user}}"
   command: "{{es_home}}/bin/elasticsearch-plugin remove {{item}} --silent"
@@ -25,7 +25,7 @@
   environment:
     CONF_DIR: "{{ es_conf_dir }}"
 
-- name: Install elasticsearch plugins
+- name: elasticsearch/install-plugins | Install elasticsearch plugins
   become: yes
   become_user: "{{es_user}}"
   command: "{{es_home}}/bin/elasticsearch-plugin install {{ item.plugin }} --batch --silent {% if item.proxy_host is defined and item.proxy_host != '' and item.proxy_port is defined and item.proxy_port != ''%} -DproxyHost={{ item.proxy_host }} -DproxyPort={{ item.proxy_port }} {% elif es_proxy_host is defined and es_proxy_host != '' %} -DproxyHost={{ es_proxy_host }} -DproxyPort={{ es_proxy_port }} {% endif %}"
@@ -42,6 +42,6 @@
   delay: 5
 
 #Set permissions on plugins directory
-- name: Set Plugin Directory Permissions
+- name: elasticsearch/install-plugins | Set Plugin Directory Permissions
   become: yes
   file: state=directory path={{ es_home }}/plugins owner={{ es_user }} group={{ es_group }} recurse=yes

@@ -1,6 +1,6 @@
 ---
 
-- name: Create pid, log and conf directories
+- name: elasticsearch/install-config | Create pid, log and conf directories
   become: yes
   file:
     path: "{{ item }}"
@@ -14,14 +14,8 @@
     - "{{es_conf_dir}}"
     - "{{es_conf_dir}}/templates"
 
-
-- name: Set es_heap_size to half installed
-  set_fact: es_heap_size="{{ (ansible_memtotal_mb / 2) | round | int | abs }}m"
-  when: es_heap_size is not defined
-
-
 #Create data directory if mountpoint doesn't exist already
-- name: Create data dir if it doesn't exist
+- name: elasticsearch/install-config | Create data dir if it doesn't exist
   become: yes
   file:
     path: "{{es_data_dir}}"
@@ -31,7 +25,7 @@
     mode: 0755
   notify: restart elasticsearch
 
-- name: Copy Systemd File
+- name: elasticsearch/install-config | Create systemd file
   become: yes
   template:
     src: etc/systemd/system/elasticsearch.service.j2
@@ -39,27 +33,26 @@
     mode: 0644
     force: yes
   notify:
+  - reload systemd configuration
   - restart elasticsearch
 
-- name: reload systemd configuration
-  become: yes
-  systemd: daemon_reload=yes
-
-- name: Copy jvm.options File for Instance
+- name: elasticsearch/install-config | Create jvm.options file
   become: yes
   template:
-    src: es_config/jvm.options.j2
+    src: opt/elasticsearch/config/jvm.options.j2
     dest: "{{es_conf_dir}}/jvm.options"
     owner: "{{es_user}}"
     group: "{{es_group}}"
     mode: 0644
     force: yes
   notify: restart elasticsearch
+  vars:
+    es_heap_size: "{{ (ansible_memtotal_mb / 2) | round | int | abs }}m"
 
-- name: Copy main elasticsearch config file
+- name: elasticsearch/install-config | Create main config file
   become: yes
   template:
-    src: es_config/elasticsearch.yml.j2
+    src: opt/elasticsearch/config/elasticsearch.yml.j2
     dest: "{{es_conf_dir}}/elasticsearch.yml"
     owner: "{{es_user}}"
     group: "{{es_group}}"
@@ -67,7 +60,7 @@
     force: yes
   notify: restart elasticsearch
 
-- name: Copy tmpfiles.d
+- name: elasticsearch/install-config | Create tmpfiles.d
   become: yes
   copy:
     content: |
@@ -79,11 +72,11 @@
     force: yes
   notify: restart elasticsearch
 
-- name: Create unicast_hosts.txt (don't notify restart)
+- name: elasticsearch/install-config | Create unicast_hosts.txt (don't notify restart)
   become: yes
   copy:
     content: |
-      {% for node in es_master_eligible_nodes %}
+      {% for node in master_eligible_nodes %}
       {{ node['hostname'] + '.' + cluster_vars.dns_user_domain if (cluster_vars.inventory_ip=='private' and cluster_vars.dns_server is defined and cluster_vars.dns_server != "") else hostvars[node['hostname']]['ansible_default_ipv4']['address'] }}
       {% endfor %}
     dest: "{{es_conf_dir}}/unicast_hosts.txt"
@@ -92,7 +85,7 @@
     mode: 0644
     force: yes
 
-- name: Copy sysctl.d/elasticsearch.conf
+- name: elasticsearch/install-config | Create sysctl.d/elasticsearch.conf
   become: yes
   copy:
     content: |
@@ -105,7 +98,7 @@
   notify: restart elasticsearch
 
 #This needs to be set programmatically, or elasticsearch will not start.  A reboot will do it, but not ideal.
-- name: set vm.max_map_count
+- name: elasticsearch/install-config | set vm.max_map_count
   become: yes
   sysctl:
     name: vm.max_map_count

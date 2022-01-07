@@ -1,12 +1,12 @@
 ---
 
 - block:
-    - name: Check kibana installed version
+    - name: kibana/install-binary | Check kibana installed version
       stat:
         path: "{{kibana_unzip_loc}}"
       register: this_kibana_installed
 
-    - name: Check any kibana installed
+    - name: kibana/install-binary | Check any kibana installed
       stat:
         path: "{{kibana_home}}"
       register: kibana_link_stat
@@ -19,35 +19,36 @@
     # If a different version is installed, stop the service and remove the soft link.
     - block:
         - block:
-            - name: Stop/Disable kibana
+            - name: kibana/install-binary | Stop/Disable kibana
               service:
                 name: kibana
                 state: stopped
                 enabled: no
 
-            - name: Remove the kibana link
+            - name: kibana/install-binary | Remove the kibana link
               file:
                 path: "{{kibana_home}}"
                 state: absent
           when: kibana_link_stat.stat.exists and kibana_link_stat.stat.lnk_source == '/opt/kibana-{{kibana_version}}'
 
-        - name: Get kibana artifact
+        - name: kibana/install-binary | Get kibana artifact
           become: yes
           get_url:
-            url: "{{kibana_artifact_location}}/kibana-{{kibana_version}}-linux-{{ansible_architecture}}.tar.gz"
-            dest: "{{kibana_unzip_loc}}.tar.gz"
-          when: use_local_artifact is not defined
+            url: "{{kibana_artifact_location}}"
+            dest: "/opt/{{ kibana_artifact_location|basename }}"
+          when: use_local_artifact is not defined  or  use_local_artifact|bool==false
 
-        - name: Extract the kibana artifact
+        - name: kibana/install-binary | Extract the kibana artifact
           become: yes
           unarchive:
-            remote_src: "{{ 'true' if use_local_artifact is not defined else 'false' }}"
-            src: "{{kibana_unzip_loc if use_local_artifact is not defined else kibana_unzip_loc|basename}}.tar.gz"
+            remote_src: "{{ 'yes' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else 'no' }}"
+            src: "{{ '/opt/' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else '' }}{{kibana_artifact_location | basename}}"
             dest: "/opt"
+            creates: "{{kibana_unzip_loc}}"
           notify: restart kibana
 
         # 'owner' and 'group' directives in unarchive do not work for tar.gz files
-        - name: Change ownership of the kibana dir
+        - name: kibana/install-binary | Change ownership of the kibana dir
           become: yes
           file:
             state: directory
@@ -57,7 +58,7 @@
             group: "{{kibana_group}}"
           notify: restart kibana
 
-        - name: Create the kibana link
+        - name: kibana/install-binary | Create the kibana link
           become: yes
           file:
             src: "{{kibana_unzip_loc}}"
@@ -69,4 +70,4 @@
           notify: restart kibana
       when: (not this_kibana_installed.stat.exists) or (not kibana_link_stat.stat.exists) or (kibana_link_stat.stat.exists and not kibana_link_stat.stat.lnk_source == kibana_unzip_loc)
   vars:
-    kibana_unzip_loc: "/opt/kibana-{{kibana_version}}-linux-{{ansible_architecture}}"
+    kibana_unzip_loc: "/opt/{{ kibana_artifact_location|basename | regex_replace('(.*?)\\.tar\\.gz', '\\1') }}"

@@ -1,6 +1,6 @@
 ---
 
-- name: Create pid, log and conf directories
+- name: kibana/install-config | Create pid, log and conf directories
   become: yes
   file:
     path: "{{ item }}"
@@ -13,7 +13,7 @@
     - "{{kibana_log_dir}}"
     - "{{kibana_conf_dir}}"
 
-- name: Copy Systemd File
+- name: kibana/install-config | Copy Systemd File
   become: yes
   template:
     src: etc/systemd/system/kibana.service.j2
@@ -21,10 +21,10 @@
     mode: 0644
     force: yes
   notify:
-  - reload systemd configuration
-  - restart kibana
+    - reload systemd configuration
+    - restart kibana
 
-- name: Copy main kibana config file
+- name: kibana/install-config | Copy main kibana config file
   become: yes
   template:
     src: opt/kibana/config/kibana.yml.j2
@@ -35,7 +35,7 @@
     force: yes
   notify: restart kibana
 
-- name: Copy tmpfiles.d
+- name: kibana/install-config | Copy tmpfiles.d
   become: yes
   copy:
     content: |

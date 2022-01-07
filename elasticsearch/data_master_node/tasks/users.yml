@@ -1,6 +1,6 @@
 ---
 
-- name: Update api user password in .security index (setting elastic password here disables the bootstrap.password)
+- name: elasticsearch/users | Update api user password in .security index (setting elastic password here disables the bootstrap.password)
   become: yes
   become_user: "{{es_user}}"
   uri:
@@ -18,7 +18,7 @@
   when: "'bootstrap.password' not in elasticsearch_keystore_list.stdout_lines"
   run_once: yes
 
-- name: Update other builtin user creds in .security index
+- name: elasticsearch/users | Update other builtin user creds in .security index
   become: yes
   become_user: "{{es_user}}"
   uri:
@@ -37,7 +37,7 @@
   with_dict: "{{es_builtin_users}}"
   when: "item.value != ''"
 
-- name: Add other users
+- name: elasticsearch/users | Add other users
   become: yes
   become_user: "{{es_user}}"
   uri:

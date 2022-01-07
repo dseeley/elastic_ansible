@@ -1,18 +1,12 @@
 #jinja2: trim_blocks:False
 {{ ansible_managed | comment }}
 
-{% if cluster_name is not defined %}
-cluster.name: elasticsearch
-{% else %}
 cluster.name: {{ cluster_name }}
-{%- endif %}
 
 node.name: {{inventory_hostname}}
 
-## Path to directory where to store the data (separate multiple locations by comma):
 path.data: {{ es_data_dir }}
 
-# Path to log files:
 path.logs: {{ es_log_dir }}
 
 network.bind_host: {{ es_network_bind_host }}
@@ -22,7 +16,7 @@ node.roles:
 {%- if 'es-data' in group_names %}
   - data
 {%- endif %}
-{%- if inventory_hostname in (es_master_eligible_nodes | map(attribute='hostname')) %}
+{%- if inventory_hostname in (master_eligible_nodes | map(attribute='hostname')) %}
   - master
 {%- endif %}
 
@@ -34,11 +28,11 @@ node.roles:
 node.attr.zone: {{ hostvars[inventory_hostname]['regionzone'] }}
 {% endif %}
 
-{%- if inventory_hostname == es_master_eligible_nodes[0]['hostname'] -%}
-{#{%- if inventory_hostname in es_master_eligible_nodes | map(attribute='hostname') -%}#}
+{%- if inventory_hostname == master_eligible_nodes[0]['hostname'] -%}
+{#{%- if inventory_hostname in master_eligible_nodes | map(attribute='hostname') -%}#}
 # (https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-bootstrap-cluster.html#modules-discovery-bootstrap-cluster)
 # Technically this doesn't have to be set to all master-eligible nodes on all such nodes, if we don't mind the cluster being fault-intolerant during startup, and it's a pain to manage because it should be removed after cluster setup, and never added again.
-{#cluster.initial_master_nodes: {{(es_master_eligible_nodes | map(attribute='hostname')) if (cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (es_master_eligible_nodes | map(attribute='ip'))}}#}
+{#cluster.initial_master_nodes: {{(master_eligible_nodes | map(attribute='hostname')) if (cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (master_eligible_nodes | map(attribute='ip'))}}#}
 cluster.initial_master_nodes: {{ inventory_hostname }}
 {%- endif %}
 

@@ -38,12 +38,11 @@
   tasks:
     - { include_role: { name: "elastic/elasticsearch/data_master_node", apply: { tags: ["elastic_elasticsearch"]} }, tags: ["elastic_elasticsearch"] }
 
-- name: elastic | elasticsearch test and finalise
+- name: elastic | elasticsearch test
   hosts: es-data[0]
   gather_facts: false
   tasks:
     - { include_role: { name: "elastic/elasticsearch/test", apply: { tags: ["elastic_elasticsearch_test"]} }, tags: ["elastic_elasticsearch_test"] }
-    - { include_role: { name: "elastic/elasticsearch/finalise", apply: { tags: ["elastic_elasticsearch_finalise"]} }, tags: ["elastic_elasticsearch_finalise"] }
 
 - name: elastic | kibana
   hosts: kibana

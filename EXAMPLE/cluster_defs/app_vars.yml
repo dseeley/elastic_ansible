@@ -2,8 +2,8 @@
 
 playbook_ca_yaml: "{{playbook_dir}}/cluster_defs/{{ cloud_type }}/{{ clusterid }}/{{ region }}/{{ buildenv }}/_ssl/ownca.yml"
 
-es_artifact_location: "https://artifacts.elastic.co/downloads/elasticsearch"
 es_version: "7.16.2"
+es_artifact_location: "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{es_version}}-linux-{{ansible_architecture}}.tar.gz"
 es_user: elasticsearch
 es_group: elasticsearch
 es_home: "/opt/elasticsearch"
@@ -74,8 +74,8 @@ es_mapping_templates:
 
 ###### Kibana ######
 
-kibana_artifact_location: "https://artifacts.elastic.co/downloads/kibana"
 kibana_version: "{{es_version}}"
+kibana_artifact_location: "https://artifacts.elastic.co/downloads/kibana/kibana-{{kibana_version}}-linux-{{ansible_architecture}}.tar.gz"
 kibana_user: kibana
 kibana_group: kibana
 kibana_home: "/opt/kibana"
@@ -90,6 +90,6 @@ kibana_ssl_ca_path: "{{kibana_ssl_path}}/ca-crt.pem"
 kibana_ssl_crt_path: "{{kibana_ssl_path}}/kibana-crt.pem"
 kibana_ssl_key_path: "{{kibana_ssl_path}}/kibana-key.pem"
 
-#If not using self-signed certificated (should vault-encrypt the key)
+#If not using self-signed certificates (should vault-encrypt the key)
 kibana_ssl_crt_content: ""
 kibana_ssl_key_content: ""

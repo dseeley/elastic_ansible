@@ -17,3 +17,48 @@
   delegate_to: "{{item.name}}"
   loop: "{{hosts_to_remove}}"
   when: "'kibana.service' in hostvars[item.name]['services']"
+
+
+- name: kibana/redeploy_predelete | reconfigure kibana.yml - needs to have elasticsearch.hosts set to the new hosts (excluding the hosts_to_remove)
+  block:
+    - name: kibana/redeploy_predelete | set master_eligible_nodes to only the nodes we're keeping
+      set_fact:
+        master_eligible_nodes: "{{ master_eligible_nodes | json_query(\"[?!contains(\" + hosts_to_remove_elasticsearch|map(attribute='name')|to_yaml|quote + \", hostname)]\") }}"
+
+    - name: kibana/redeploy_predelete | master_eligible_nodes
+      debug: msg={{master_eligible_nodes}}
+
+    - name: kibana/redeploy_predelete | Get (network) facts to determine the local IP/network
+      setup: { gather_subset: ["network"] }
+      delegate_to: "{{item}}"
+      delegate_facts: yes
+      loop: "{{ master_eligible_nodes | map(attribute='hostname') }}"
+
+    - debug:
+        msg: "{{ (master_eligible_nodes | map(attribute='hostname')) | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address') }}"
+      delegate_to: "{{item}}"
+      loop: "{{ kibana_nodes_to_keep }}"
+
+    - name: kibana/redeploy_predelete | Copy main config file
+      template:
+        src: "{{playbook_dir}}/roles/elastic/kibana/templates/opt/kibana/config/kibana.yml.j2"
+        dest: "{{kibana_conf_dir}}/kibana.yml"
+        owner: "{{kibana_user}}"
+        group: "{{kibana_group}}"
+        mode: '0644'
+        force: yes
+      delegate_to: "{{item}}"
+      loop: "{{ kibana_nodes_to_keep }}"
+
+    - name: kibana/redeploy_predelete | restart kibana
+      service:
+        name: kibana
+        state: restarted
+      delegate_to: "{{item}}"
+      loop: "{{ kibana_nodes_to_keep }}"
+
+    - name: kibana/redeploy_predelete | re-include main elastic/facts to reset facts (master_eligible_nodes) to default
+      include_role: { name: "elastic/facts" }
+  become: yes
+  vars:
+    kibana_nodes_to_keep: "{{ groups['kibana'] | difference(hosts_to_remove|map(attribute='name')) |list }}"

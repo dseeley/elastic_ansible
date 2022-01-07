@@ -2,48 +2,48 @@
 
 - block:
     ## This is no good - if it's already running, this starts up another instance to get the version, which may OOM.
-    #- name: Check if elasticsearch is installed
+    #- name:elasticsearch/install-binary | Check if elasticsearch is installed
     #  shell: "{{es_home}}/bin/elasticsearch --version | grep \"Version: {{es_version}}\""
     #  failed_when: es_install_check.rc > 1
     #  changed_when: no
     #  register: es_install_check
 
-    - name: Check Elasticsearch installed version
+    - name: elasticsearch/install-binary | Check Elasticsearch installed version
       stat: path="{{es_unzip_loc}}"
       register: this_es_installed
 
     #- debug: msg={{this_es_installed.stat}}
 
-    - name: Check any Elasticsearch installed
+    - name: elasticsearch/install-binary | Check any Elasticsearch installed
       stat: path="{{es_home}}"
       register: es_link_stat
 
     #- debug: msg={{es_link_stat.stat}}
 
-#    - name: "Assert that installed version is same as requested version (we cannot perform safe (zero-downtime) upgrades by just running with a new version number)"
+#    - name: elasticsearch/install-binary | "Assert that installed version is same as requested version (we cannot perform safe (zero-downtime) upgrades by just running with a new version number)"
 #      assert: { that: "es_link_stat.stat.lnk_source == es_unzip_loc", fail_msg: "We cannot perform zero-downtime upgrades by just running with a new es_version number.  Please use redeploy.yml" }
     - warn_str: msg="We cannot perform zero-downtime upgrades by just running with a new es_version number.  Please use redeploy.yml"
       when: es_link_stat.stat.exists is defined and es_link_stat.stat.exists|bool  and  es_link_stat.stat.lnk_source != es_unzip_loc
 
     - block:
-        - name: Get Elasticsearch artifact
+        - name: elasticsearch/install-binary | Get Elasticsearch artifact
           become: yes
           get_url:
-            url: "{{es_artifact_location}}/elasticsearch-{{es_version}}-linux-{{ansible_architecture}}.tar.gz"
-            dest: "{{es_unzip_loc}}.tar.gz"
-          when: use_local_artifact is not defined
+            url: "{{es_artifact_location}}"
+            dest: "/opt/{{es_artifact_location | basename}}"
+          when: use_local_artifact is not defined  or  use_local_artifact|bool==false
 
-        - name: Extract the Elasticsearch artifact
+        - name: elasticsearch/install-binary | Extract the Elasticsearch artifact
           become: yes
           unarchive:
-            remote_src: "{{ 'true' if use_local_artifact is not defined else 'false' }}"
-            src: "{{es_unzip_loc if use_local_artifact is not defined else es_unzip_loc|basename}}.tar.gz"
+            remote_src: "{{ 'yes' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else 'no' }}"
+            src: "{{ '/opt/' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else '' }}{{es_artifact_location | basename}}"
             dest: /opt
             creates: "{{es_unzip_loc}}"
           notify: restart elasticsearch
 
         # 'owner' and 'group' directives in unarchive do not work for tar.gz files
-        - name: Change ownership of the elasticsearch dir
+        - name: elasticsearch/install-binary | Change ownership of the elasticsearch dir
           become: yes
           file:
             state: directory
@@ -53,7 +53,7 @@
             group: "{{es_group}}"
           notify: restart elasticsearch
 
-        - name: Create the elasticsearch link
+        - name: elasticsearch/install-binary | Create the elasticsearch link
           become: yes
           file:
             src: "{{es_unzip_loc}}"
@@ -63,6 +63,6 @@
             owner: "{{es_user}}"
             group: "{{es_group}}"
           notify: restart elasticsearch
-      when: (not this_es_installed.stat.exists) or (not es_link_stat.stat.exists)
+      when: (not es_link_stat.stat.exists) or (es_link_stat.stat.exists and es_link_stat.stat.lnk_source == es_unzip_loc)
   vars:
     es_unzip_loc: "/opt/elasticsearch-{{es_version}}"

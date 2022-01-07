@@ -29,10 +29,10 @@ server.host: "{{ kibana_network_host }}"
 server.maxPayloadBytes: 5242880
 
 # The Kibana server's name.  This is used for display purposes.
-server.name: "{{ansible_hostname}}"
+server.name: "{{inventory_hostname}}"
 
 # The URLs of the Elasticsearch instances to use for all your queries.
-elasticsearch.hosts: {{(es_master_eligible_nodes | map(attribute='hostname') | map('regex_replace', '^(.*)$', '\\1.' + cluster_vars.dns_user_domain)) if (cluster_vars.inventory_ip=='private' and cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (es_master_eligible_nodes | map(attribute='hostname') | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address')) | map('regex_replace', '^(.*)$', 'https://' + '\\1' + ':9200')}}
+elasticsearch.hosts: {{ (master_eligible_nodes | map(attribute='hostname') | map('regex_replace', '^(.*)$', '\\1.' + cluster_vars.dns_user_domain)) if (cluster_vars.inventory_ip=='private' and cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (master_eligible_nodes | map(attribute='hostname') | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address')) | map('regex_replace', '^(.*)$', 'https://' + '\\1' + ':9200') }}
 
 # Kibana uses an index in Elasticsearch to store saved searches, visualizations and
 # dashboards. Kibana creates a new index if the index doesn't already exist.
@@ -119,3 +119,6 @@ logging.dest: {{ kibana_log_dir }}/kibana.log
 # Specifies locale to be used for all localizable strings, dates and number formats.
 # Supported languages are the following: English - en , by default , Chinese - zh-CN .
 #i18n.locale: "en"
+
+telemetry.enabled: false
+telemetry.allowChangingOptInStatus: false

@@ -2,16 +2,16 @@
 
 - name: Get master-eligible nodes
   set_fact:
-    es_master_eligible_nodes: |
+    master_eligible_nodes: |
       {%- set res = [] -%}
       {%- set master_eligible_hostnames = (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | sort -%}
       {%- for master_eligible_hostname in master_eligible_hostnames -%}
         {%- set _ = res.append({'hostname': master_eligible_hostname, 'ip': hostvars[master_eligible_hostname]['ansible_host']}) -%}
-      {%- endfor %}
+      {%- endfor -%}
       {{res}}
 
-- name: es_master_eligible_nodes
-  debug: msg={{es_master_eligible_nodes}}
+- name: master_eligible_nodes
+  debug: msg={{master_eligible_nodes}}
   run_once: yes
 
 ## old - for reference.
@@ -23,7 +23,7 @@
 #
 #    - name: Get master-eligible nodes (when using DNS)
 #      set_fact:
-#        es_master_eligible_nodes: "{{ (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | map('regex_replace', '^(.*)$', '\\1.' + cluster_vars.dns_user_domain) | sort }}"
+#        master_eligible_nodes: "{{ (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | map('regex_replace', '^(.*)$', '\\1.' + cluster_vars.dns_user_domain) | sort }}"
 #  when: (cluster_vars.dns_server is defined and cluster_vars.dns_server != "")
 #
 #- name: Get elasticsearch hosts when DNS not in use
@@ -34,7 +34,7 @@
 #
 #    - name: Get master-eligible nodes (when not using DNS)
 #      set_fact:
-#        es_master_eligible_nodes: "{{ (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | map('extract', hostvars, 'ansible_host') | sort }}"
+#        master_eligible_nodes: "{{ (groups['es-master'] if groups['es-master'] is defined else groups['es-data']) | map('extract', hostvars, 'ansible_host') | sort }}"
 #  when: (cluster_vars.dns_server is not defined  or  cluster_vars.dns_server == "")
 #
 #- name: es_unicast_nodes
