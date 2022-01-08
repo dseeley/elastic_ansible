@@ -13,7 +13,7 @@ network.bind_host: {{ es_network_bind_host }}
 network.publish_host: _site_
 
 node.roles:
-{%- if 'es-data' in group_names %}
+{%- if 'data' in group_names %}
   - data
 {%- endif %}
 {%- if inventory_hostname in (master_eligible_nodes | map(attribute='hostname')) %}

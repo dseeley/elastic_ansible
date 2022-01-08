@@ -111,7 +111,7 @@
           loop: "{{ data_master_nodes_to_keep }}"
       become: yes
       vars:
-        data_master_nodes_to_keep: "{{ query('inventory_hostnames', 'es-data,es-master', errors='ignore') | difference(hostnames_to_remove) }}"
+        data_master_nodes_to_keep: "{{ query('inventory_hostnames', 'data,master', errors='ignore') | difference(hostnames_to_remove) }}"
 
     - name: elasticsearch/redeploy_predelete | update service_facts
       service_facts:

@@ -34,12 +34,12 @@
     - { include_role: { name: "elastic/ssl_ownca", apply: { tags: ["elastic_ssl_ownca"] } }, tags: ["elastic_ssl_ownca"] }
 
 - name: elastic | elasticsearch
-  hosts: es-data:es-master
+  hosts: data:master
   tasks:
     - { include_role: { name: "elastic/elasticsearch/data_master_node", apply: { tags: ["elastic_elasticsearch"]} }, tags: ["elastic_elasticsearch"] }
 
 - name: elastic | elasticsearch test
-  hosts: es-data[0]
+  hosts: data[0]
   gather_facts: false
   tasks:
     - { include_role: { name: "elastic/elasticsearch/test", apply: { tags: ["elastic_elasticsearch_test"]} }, tags: ["elastic_elasticsearch_test"] }

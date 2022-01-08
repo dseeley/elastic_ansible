@@ -17,7 +17,7 @@
     r__uri__cluster_health.json is defined and
     r__uri__cluster_health.json.status=='green' and
     r__uri__cluster_health.json.initializing_shards==0 and
-    r__uri__cluster_health.json.number_of_data_nodes==groups['es-data'] | length and
+    r__uri__cluster_health.json.number_of_data_nodes==groups['data'] | length and
     r__uri__cluster_health.json.relocating_shards==0 and
     r__uri__cluster_health.json.unassigned_shards==0 and
     r__uri__cluster_health.json.delayed_unassigned_shards==0

@@ -4,7 +4,7 @@
   debug: msg="{{hosts_to_remove | default([])}}"
 
 - set_fact:
-    hosts_to_remove_elasticsearch: "{{hosts_to_remove | json_query(\"[?contains(['es-data','es-master'], tagslabels.hosttype)]\")}}"
+    hosts_to_remove_elasticsearch: "{{hosts_to_remove | json_query(\"[?contains(['data','master'], tagslabels.hosttype)]\")}}"
 
 - set_fact:
     hosts_to_remove_kibana: "{{hosts_to_remove | json_query(\"[?contains(['kibana'], tagslabels.hosttype)]\")}}"
