@@ -23,7 +23,7 @@ es_extra_config: {
   http.cors.allow-origin: "*"
 }
 es_index_codec: best_compression
-es_index_number_of_shards: 6
+es_index_number_of_shards: "{{ (cluster_hosts_target | length) - 1 }}"
 es_index_number_of_replicas: 1
 es_refresh_interval: "30s"
 es_network_bind_host: 0.0.0.0
@@ -83,6 +83,7 @@ kibana_pid_dir: "/var/run/kibana"
 kibana_log_dir: "/var/log/kibana"
 kibana_conf_dir: "{{kibana_home}}/config"
 kibana_network_host: 0.0.0.0
+kibana_port: 443    # 5601 is default
 
 kibana_ssl_path: "{{ kibana_conf_dir }}/certs"
 kibana_ssl_is_self_signed: true

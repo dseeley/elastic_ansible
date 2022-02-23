@@ -23,6 +23,6 @@
     - module: wait_for
       args:
         host: localhost
-        port: 5601
+        port: "{{kibana_port | default(5601)}}"
         timeout: 300
   throttle: "{{'1' if kibana_link_stat.stat.exists else '0'}}"
