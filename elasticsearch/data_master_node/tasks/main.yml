@@ -50,7 +50,7 @@
   become: yes
   become_user: "{{es_user}}"
   uri:
-    url: "https://localhost:9200/_template/{{item['name']}}"
+    url: "https://localhost:9200/_index_template/{{item['name']}}"
     method: PUT
     status_code: 200
     user: "{{es_api_basic_auth_username | default(omit)}}"
@@ -61,6 +61,6 @@
     client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
     client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
     validate_certs: no
-  with_items: "{{ es_mapping_templates }}"
+  with_items: "{{ es_index_templates }}"
   run_once: yes
-  when: es_mapping_templates is defined
+  when: es_index_templates is defined

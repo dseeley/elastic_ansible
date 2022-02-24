@@ -11,8 +11,8 @@
         path: "{{kibana_home}}"
       register: kibana_link_stat
 
-    #- debug: msg={{this_kibana_installed.stat}}
-    #- debug: msg={{kibana_link_stat.stat}}
+    - debug: msg={{this_kibana_installed.stat}}
+    - debug: msg={{kibana_link_stat.stat}}
 
     # If it's already installed and latest, do nothing
     # If it's not installed, install
@@ -38,24 +38,24 @@
             dest: "/opt/{{ kibana_artifact_location|basename }}"
           when: use_local_artifact is not defined  or  use_local_artifact|bool==false
 
+        - name: kibana/install-binary | Create the artifact dir if it doesn't exist
+          become: yes
+          file:
+            state: directory
+            path: "{{kibana_unzip_loc}}"
+            owner: "{{kibana_user}}"
+            group: "{{kibana_group}}"
+            mode: 0755
+
         - name: kibana/install-binary | Extract the kibana artifact
           become: yes
           unarchive:
             remote_src: "{{ 'yes' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else 'no' }}"
             src: "{{ '/opt/' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else '' }}{{kibana_artifact_location | basename}}"
-            dest: "/opt"
-            creates: "{{kibana_unzip_loc}}"
-          notify: restart kibana
-
-        # 'owner' and 'group' directives in unarchive do not work for tar.gz files
-        - name: kibana/install-binary | Change ownership of the kibana dir
-          become: yes
-          file:
-            state: directory
-            recurse: true
-            path: "{{kibana_unzip_loc}}"
+            dest: "{{kibana_unzip_loc}}"
             owner: "{{kibana_user}}"
             group: "{{kibana_group}}"
+            extra_opts: [--strip-components=1]
           notify: restart kibana
 
         - name: kibana/install-binary | Create the kibana link
@@ -70,4 +70,4 @@
           notify: restart kibana
       when: (not this_kibana_installed.stat.exists) or (not kibana_link_stat.stat.exists) or (kibana_link_stat.stat.exists and not kibana_link_stat.stat.lnk_source == kibana_unzip_loc)
   vars:
-    kibana_unzip_loc: "/opt/{{ kibana_artifact_location|basename | regex_replace('(.*?)\\.tar\\.gz', '\\1') }}"
+    kibana_unzip_loc: "/opt/{{ kibana_artifact_location | basename | regex_replace('(.*?)\\.tar\\.gz', '\\1') }}"

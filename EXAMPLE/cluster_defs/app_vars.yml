@@ -2,7 +2,7 @@
 
 playbook_ca_yaml: "{{playbook_dir}}/cluster_defs/{{ cloud_type }}/{{ clusterid }}/{{ region }}/{{ buildenv }}/_ssl/ownca.yml"
 
-es_version: "7.16.2"
+es_version: "8.0.0"       # "7.17.0"
 es_artifact_location: "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{es_version}}-linux-{{ansible_architecture}}.tar.gz"
 es_user: elasticsearch
 es_group: elasticsearch
@@ -17,15 +17,11 @@ es_extra_config: {
   bootstrap.memory_lock: true,
   action.destructive_requires_name: true,
   thread_pool.search.queue_size: 10000,
-  cluster.routing.allocation.disk.threshold_enabled: false,
   cluster.routing.allocation.awareness.attributes: "zone",
   http.cors.enabled: true,
-  http.cors.allow-origin: "*"
+  http.cors.allow-origin: "*",
+  stack.templates.enabled: false
 }
-es_index_codec: best_compression
-es_index_number_of_shards: "{{ (cluster_hosts_target | length) - 1 }}"
-es_index_number_of_replicas: 1
-es_refresh_interval: "30s"
 es_network_bind_host: 0.0.0.0
 #es_plugins:
 #  - plugin: mapper-size
@@ -54,23 +50,44 @@ es_users:
     full_name: "Dougal Seeley"
 
 
-es_mapping_templates:
-  - name: default
+es_index_templates:
+  - name: tst_dynamic
     content: {
-      "index_patterns": ["*"],
-      "order": 0,
-      "settings": {
-        "index.codec": "{{es_index_codec}}",
-        "index.number_of_shards": "{{es_index_number_of_shards}}",
-        "index.number_of_replicas": "{{es_index_number_of_replicas}}",
-        "index.refresh_interval": "{{es_refresh_interval}}",
-        "index.mapping.ignore_malformed": true,
-        "index.mapping.coerce": true,
-        "index.mapping.total_fields.limit": 1500,
-        "index.auto_expand_replicas": false
-      },
-      version: 1
+      "index_patterns": ["tst_dynamic"],
+      "priority": 0,
+      "template": {
+        "settings": {
+          "index.codec": "best_compression",
+          "index.number_of_shards": "{{ groups['data'] | length }}",
+          "index.number_of_replicas": 1,
+          "index.mapping.ignore_malformed": true,
+          "index.mapping.coerce": true,
+          "index.mapping.total_fields.limit": 1500,
+        },
+        "mappings": {
+          "_source": { "enabled": true },
+          "dynamic": true
+        }
+      }
     }
+  - name: tst_noindex
+    content: {
+      "index_patterns": ["tst_noindex"],
+      "priority": 0,
+      "template": {
+        "settings": {
+          "codec": "best_compression",
+          "number_of_shards": "{{ groups['data'] | length }}",
+          "number_of_replicas": 1,
+          "refresh_interval": "5s",
+        },
+        "mappings": {
+          "_source": { "enabled": false },
+          "dynamic": false,
+        }
+      }
+    }
+
 
 ###### Kibana ######
 

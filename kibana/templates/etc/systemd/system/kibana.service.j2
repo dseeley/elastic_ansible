@@ -8,11 +8,15 @@ After=network-online.target
 Type=simple
 User={{kibana_user}}
 Group={{kibana_group}}
+PrivateTmp=true
 
 Environment=KBN_HOME={{kibana_home}}
 Environment=KBN_PATH_CONF={{kibana_conf_dir}}
 
-ExecStart={{kibana_home}}/bin/kibana --logging.dest="{{kibana_log_dir}}/kibana.log" --pid.file="{{kibana_pid_dir}}/kibana.pid"
+EnvironmentFile=-/etc/default/kibana
+EnvironmentFile=-/etc/sysconfig/kibana
+
+ExecStart={{kibana_home}}/bin/kibana
 
 Restart=on-failure
 RestartSec=3
