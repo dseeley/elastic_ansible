@@ -1,14 +1,17 @@
 [Unit]
-Description=elasticsearch-{{ansible_hostname}}
-Documentation=http://www.elastic.co
+Description=Elasticsearch-{{ansible_hostname}}
+Documentation=https://www.elastic.co
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 RuntimeDirectory=elasticsearch
+PrivateTmp=true
 Environment=ES_HOME={{es_home}}
 Environment=ES_PATH_CONF={{es_conf_dir}}
 Environment=PID_DIR={{es_pid_dir}}
+Environment=ES_SD_NOTIFY=true
+EnvironmentFile=-/etc/default/elasticsearch
 
 WorkingDirectory={{es_home}}
 
@@ -53,11 +56,19 @@ TimeoutStopSec=0
 # SIGTERM signal is used to stop the Java process
 KillSignal=SIGTERM
 
+# Send the signal only to the JVM rather than its control group
+KillMode=process
+
 # Java process is never killed
 SendSIGKILL=no
 
 # When a JVM receives a SIGTERM signal it exits with code 143
 SuccessExitStatus=143
 
+# Allow a slow startup before the systemd notifier module kicks in to extend the timeout
+TimeoutStartSec=75
+
 [Install]
 WantedBy=multi-user.target
+
+# Built for packages-8.0.0 (packages)
