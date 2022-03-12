@@ -1,0 +1,7 @@
+#!groovy
+
+node {
+    stage('Call elastic/elastic_ansible-release-tag') {
+        build job: 'elastic/elastic_ansible-release-tag', parameters: [string(name: 'NEW_VERSION', value: "next")]
+    }
+}
