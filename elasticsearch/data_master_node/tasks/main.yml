@@ -29,11 +29,11 @@
       shell: "printf {{ es_api_basic_auth_password }} | {{es_home}}/bin/elasticsearch-keystore add -x bootstrap.password"
       notify: restart elasticsearch
       when: "'bootstrap.password' not in elasticsearch_keystore_list.stdout_lines"
-  become: yes
+  become: true
   become_user: "{{ es_user }}"
 
 - debug: msg="force elasticsearch restart"
-  changed_when: yes
+  changed_when: true
   notify: restart elasticsearch
   when: force_elasticsearch_restart is defined  and  force_elasticsearch_restart|bool
 
@@ -41,13 +41,26 @@
 - name: flush the handlers, (re)starting elasticsearch, if necessary
   meta: flush_handlers
 
+- name: elasticsearch/main | Ensure elasticsearch is running (e.g. in case an initial run didn't complete or something.  Shouldn't be necessary for 99% of the time.)
+  become: true
+  block:
+    - name: elasticsearch/main | Ensure elasticsearch is running | start & enable elasticsearch service
+      service:
+        name: elasticsearch
+        state: started
+        enabled: true
+    - name: elasticsearch/main | Ensure elasticsearch is running | wait for port 9200 to be open
+      wait_for:
+        host: localhost
+        port: 9200
+        timeout: 300
 
 - include_tasks:
     file: users.yml
 
 
 - name: Apply elasticsearch templates
-  become: yes
+  become: true
   become_user: "{{es_user}}"
   uri:
     url: "https://localhost:9200/_index_template/{{item['name']}}"
@@ -55,12 +68,12 @@
     status_code: 200
     user: "{{es_api_basic_auth_username | default(omit)}}"
     password: "{{es_api_basic_auth_password | default(omit)}}"
-    force_basic_auth: yes
+    force_basic_auth: true
     body_format: json
     body: "{{ item['content'] }}"
     client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
     client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
-    validate_certs: no
+    validate_certs: false
   with_items: "{{ es_index_templates }}"
-  run_once: yes
+  run_once: true
   when: es_index_templates is defined

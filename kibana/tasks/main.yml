@@ -1,16 +1,16 @@
 ---
 
 - name: hostconfig | Create kibana unix group
-  become: yes
+  become: true
   group:
     name: "{{kibana_group}}"
 
 - name: hostconfig | Add the kibana user
-  become: yes
+  become: true
   user:
     name: "{{kibana_user}}"
     groups: "{{kibana_group}}"
-    system: yes
+    system: true
 
 
 - include_tasks: install-binary.yml

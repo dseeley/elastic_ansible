@@ -23,23 +23,23 @@
               service:
                 name: kibana
                 state: stopped
-                enabled: no
+                enabled: false
 
             - name: kibana/install-binary | Remove the kibana link
               file:
                 path: "{{kibana_home}}"
                 state: absent
-          when: kibana_link_stat.stat.exists and kibana_link_stat.stat.lnk_source == '/opt/kibana-{{kibana_version}}'
+          when: kibana_link_stat.stat.exists and kibana_link_stat.stat.lnk_source == '/opt/kibana-' + kibana_version
 
         - name: kibana/install-binary | Get kibana artifact
-          become: yes
+          become: true
           get_url:
             url: "{{kibana_artifact_location}}"
             dest: "/opt/{{ kibana_artifact_location|basename }}"
           when: use_local_artifact is not defined  or  use_local_artifact|bool==false
 
         - name: kibana/install-binary | Create the artifact dir if it doesn't exist
-          become: yes
+          become: true
           file:
             state: directory
             path: "{{kibana_unzip_loc}}"
@@ -48,7 +48,7 @@
             mode: 0755
 
         - name: kibana/install-binary | Extract the kibana artifact
-          become: yes
+          become: true
           unarchive:
             remote_src: "{{ 'yes' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else 'no' }}"
             src: "{{ '/opt/' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else '' }}{{kibana_artifact_location | basename}}"
@@ -59,7 +59,7 @@
           notify: restart kibana
 
         - name: kibana/install-binary | Create the kibana link
-          become: yes
+          become: true
           file:
             src: "{{kibana_unzip_loc}}"
             dest: "{{kibana_home}}"

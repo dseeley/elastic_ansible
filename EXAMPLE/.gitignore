@@ -7,7 +7,9 @@ venv
 *.pyc
 Pipfile.lock
 roles/clusterverse
+/collections/
 /gcp__*.json
 id_rsa*
-/cluster_defs/**/_ssl/*
+/_dynamic_inventory/
+/cluster_defs/**/*ssl*
 /test*.yml
