@@ -12,7 +12,7 @@
 
 - name: master_eligible_nodes
   debug: msg={{master_eligible_nodes}}
-  run_once: yes
+  run_once: true
 
 ## old - for reference.
 #- name: Get elasticsearch hosts when DNS in use
@@ -39,4 +39,4 @@
 #
 #- name: es_unicast_nodes
 #  debug: msg={{es_unicast_nodes}}
-#  run_once: yes
+#  run_once: true

@@ -26,7 +26,7 @@ server.host: "{{ kibana_network_host }}"
 
 # Specifies the public URL at which Kibana is available for end users. If
 # `server.basePath` is configured this URL should end with the same basePath.
-#server.publicBaseUrl: ""
+server.publicBaseUrl: "https://{%- if ((cluster_vars.dns_server is defined and cluster_vars.dns_server != '') and (cluster_vars.dns_user_domain is defined and cluster_vars.dns_user_domain != '')) -%}{{ groups['kibana'][0] }}/.{{ cluster_vars.dns_user_domain }}{%- else -%}{%- if cluster_vars.assign_public_ip in [true, 'dynamic', 'static'] -%}{{ hostvars[groups['kibana'][0]]['ipv4_public'] }}{%- else -%}{{ hostvars[groups['kibana'][0]]['ansible_default_ipv4']['address'] }}{%- endif -%}{%- endif -%}"
 
 # The maximum payload size in bytes for incoming server requests.
 server.maxPayloadBytes: 5242880
@@ -46,7 +46,7 @@ server.ssl.certificateAuthorities: [ "{{ kibana_ssl_ca_path }}" ]
 
 # =================== System: Elasticsearch ===================
 # The URLs of the Elasticsearch instances to use for all your queries.
-elasticsearch.hosts: {{ (master_eligible_nodes | map(attribute='hostname') | map('regex_replace', '^(.*)$', '\\1.' + cluster_vars.dns_user_domain)) if (cluster_vars.inventory_ip=='private' and cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (master_eligible_nodes | map(attribute='hostname') | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address')) | map('regex_replace', '^(.*)$', 'https://' + '\\1' + ':9200') }}
+elasticsearch.hosts: {{ ((master_eligible_nodes | map(attribute='hostname') | map('regex_replace', '^(.*)$', '\\1.' + cluster_vars.dns_user_domain)) if (cluster_vars.inventory_ip=='private' and cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (master_eligible_nodes | map(attribute='hostname') | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address'))) | map('regex_replace', '^(.*)$', 'https://' + '\\1' + ':9200') }}
 
 # If your Elasticsearch is protected with basic authentication, these settings provide
 # the username and password that the Kibana server uses to perform maintenance on the Kibana

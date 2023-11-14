@@ -1,16 +1,16 @@
 ---
 
 - name: elasticsearch/test | Ensure the health status is green for all nodes in the cluster
-  become: yes
+  become: true
   uri:
     url: "https://localhost:9200/_cluster/health"
     user: "{{es_api_basic_auth_username | default(omit)}}"
     password: "{{es_api_basic_auth_password | default(omit)}}"
-    force_basic_auth: yes
+    force_basic_auth: true
     client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
     client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
     method: GET
-    validate_certs: no
+    validate_certs: false
   register: r__uri__cluster_health
   any_errors_fatal: true
   until: >

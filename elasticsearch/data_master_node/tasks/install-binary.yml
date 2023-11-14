@@ -5,7 +5,7 @@
     #- name:elasticsearch/install-binary | Check if elasticsearch is installed
     #  shell: "{{es_home}}/bin/elasticsearch --version | grep \"Version: {{es_version}}\""
     #  failed_when: es_install_check.rc > 1
-    #  changed_when: no
+    #  changed_when: false
     #  register: es_install_check
 
     - name: elasticsearch/install-binary | Check Elasticsearch installed version
@@ -27,14 +27,14 @@
 
     - block:
         - name: elasticsearch/install-binary | Get Elasticsearch artifact
-          become: yes
+          become: true
           get_url:
             url: "{{es_artifact_location}}"
             dest: "/opt/{{es_artifact_location | basename}}"
           when: use_local_artifact is not defined  or  use_local_artifact|bool==false
 
         - name: elasticsearch/install-binary | Extract the Elasticsearch artifact
-          become: yes
+          become: true
           unarchive:
             remote_src: "{{ 'yes' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else 'no' }}"
             src: "{{ '/opt/' if (use_local_artifact is not defined  or  use_local_artifact|bool==false) else '' }}{{es_artifact_location | basename}}"
@@ -44,7 +44,7 @@
 
         # 'owner' and 'group' directives in unarchive do not work for tar.gz files
         - name: elasticsearch/install-binary | Change ownership of the elasticsearch dir
-          become: yes
+          become: true
           file:
             state: directory
             recurse: true
@@ -54,7 +54,7 @@
           notify: restart elasticsearch
 
         - name: elasticsearch/install-binary | Create the elasticsearch link
-          become: yes
+          become: true
           file:
             src: "{{es_unzip_loc}}"
             dest: "{{es_home}}"
