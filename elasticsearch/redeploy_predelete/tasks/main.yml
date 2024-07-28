@@ -75,12 +75,10 @@
             method: GET
             validate_certs: false
           register: r__uri__cat_shards
-          until: >
-            r__uri__cat_shards.json is defined and
-            ((r__uri__cat_shards.json | json_query(jq1)) | length == 0)
+          until: r__uri__cat_shards.json is defined and ((r__uri__cat_shards.json | json_query(jq1)) | length == 0)
           retries: 500
           vars:
-            jq1: "[?contains({{hostnames_to_remove + [null]}}, node)]"
+            jq1: "[?contains({{hostnames_to_remove + [None]}}, node)]"
 
         - name: elasticsearch/redeploy_predelete | Ensure the cluster is healthy before continuing
           include_role:
@@ -139,6 +137,7 @@
             client_cert: "{{es_ssl_certificate if es_ssl_client_authentication=='required' else omit}}"
             client_key: "{{es_ssl_key if es_ssl_client_authentication=='required' else omit}}"
             validate_certs: false
+          run_once: true
 
         - name: elasticsearch/redeploy_predelete | Remove the cluster.routing.allocation.exclude._name
           uri:
