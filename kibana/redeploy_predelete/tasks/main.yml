@@ -3,41 +3,29 @@
 - name: kibana/redeploy_predelete | hosts_to_remove
   debug: msg="{{hosts_to_remove | default('')}}"
 
-- name: update service_facts
+- name: kibana/redeploy_predelete | gather service_facts
   service_facts:
   delegate_to: "{{item.name}}"
   delegate_facts: true
   loop: "{{hosts_to_remove}}"
 
-- name: kibana/redeploy_predelete | Stop service
+- name: kibana/redeploy_predelete | stop kibana.service
   become: true
   service:
     name: kibana
     state: stopped
   delegate_to: "{{item.name}}"
   loop: "{{hosts_to_remove}}"
-  when: "'kibana.service' in hostvars[item.name]['services']"
-
+  when: "'kibana.service' in hostvars[item.name]['ansible_facts']['services']"
 
 - name: kibana/redeploy_predelete | reconfigure kibana.yml - needs to have elasticsearch.hosts set to the new hosts (excluding the hosts_to_remove)
   block:
-    - name: kibana/redeploy_predelete | set master_eligible_nodes to only the nodes we're keeping
-      set_fact:
-        master_eligible_nodes: "{{ master_eligible_nodes | json_query(\"[?!contains(\" + hosts_to_remove_elasticsearch|map(attribute='name')|to_yaml|quote + \", hostname)]\") }}"
+    - name: kibana/redeploy_predelete | kibana_nodes_to_keep
+      debug: msg={{kibana_nodes_to_keep}}
 
-    - name: kibana/redeploy_predelete | master_eligible_nodes
-      debug: msg={{master_eligible_nodes}}
-
-    - name: kibana/redeploy_predelete | Get (network) facts to determine the local IP/network
-      setup: { gather_subset: ["network"] }
-      delegate_to: "{{item}}"
-      delegate_facts: true
-      loop: "{{ master_eligible_nodes | map(attribute='hostname') }}"
-
-    - debug:
-        msg: "{{ (master_eligible_nodes | map(attribute='hostname')) | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address') }}"
-      delegate_to: "{{item}}"
-      loop: "{{ kibana_nodes_to_keep }}"
+    - name: kibana/redeploy_predelete | groups['data'] | difference(hosts_to_remove_elasticsearch | default([]) | map(attribute='name'))
+      debug:
+        msg: "{{ groups['data'] | difference(hosts_to_remove_elasticsearch | default([]) | map(attribute='name')) }}"
 
     - name: kibana/redeploy_predelete | Copy main config file
       template:
@@ -56,9 +44,6 @@
         state: restarted
       delegate_to: "{{item}}"
       loop: "{{ kibana_nodes_to_keep }}"
-
-    - name: kibana/redeploy_predelete | re-include main elastic/facts to reset facts (master_eligible_nodes) to default
-      include_role: { name: "elastic/facts" }
   become: true
   vars:
     kibana_nodes_to_keep: "{{ groups['kibana'] | difference(hosts_to_remove|map(attribute='name')) |list }}"

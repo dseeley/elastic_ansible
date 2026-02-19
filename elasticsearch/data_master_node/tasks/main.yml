@@ -32,12 +32,6 @@
   become: true
   become_user: "{{ es_user }}"
 
-- debug: msg="force elasticsearch restart"
-  changed_when: true
-  notify: restart elasticsearch
-  when: force_elasticsearch_restart is defined  and  force_elasticsearch_restart|bool
-
-
 - name: flush the handlers, (re)starting elasticsearch, if necessary
   meta: flush_handlers
 

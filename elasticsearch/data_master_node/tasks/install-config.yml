@@ -3,16 +3,16 @@
 - name: elasticsearch/install-config | Create pid, log and conf directories
   become: true
   file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     state: directory
     owner: "{{es_user}}"
     group: "{{es_group}}"
-    mode: "2755"
+    mode: "{{ item.mode }}"
   with_items:
-    - "{{es_pid_dir}}"
-    - "{{es_log_dir}}"
-    - "{{es_conf_dir}}"
-    - "{{es_conf_dir}}/templates"
+    - { path: '{{es_pid_dir}}', mode: '2755'}
+    - { path: '{{es_log_dir}}', mode: '2755'}
+    - { path: '{{es_conf_dir}}', mode: '0700'}
+    - { path: '{{es_conf_dir}}/templates', mode: '2755'}
 
 #Create data directory if mountpoint doesn't exist already
 - name: elasticsearch/install-config | Create data dir if it doesn't exist
@@ -47,7 +47,7 @@
     force: true
   notify: restart elasticsearch
   vars:
-    es_heap_size: "{{ (ansible_memtotal_mb / 2) | round | int | abs }}m"
+    es_heap_size: "{{ (ansible_facts['memtotal_mb'] / 2) | round | int | abs }}m"
 
 - name: elasticsearch/install-config | Create main config file
   become: true
@@ -77,7 +77,7 @@
   copy:
     content: |
       {% for node in master_eligible_nodes %}
-      {{ node['hostname'] + '.' + cluster_vars.dns_user_domain if (cluster_vars.inventory_ip=='private' and cluster_vars.dns_server is defined and cluster_vars.dns_server != "") else hostvars[node['hostname']]['ansible_default_ipv4']['address'] }}
+      {{ node['hostname'] + '.' + cluster_vars.dns_domain if (cluster_vars.inventory_ip=='private' and cluster_vars.dns_server is defined and cluster_vars.dns_server != "") else hostvars[node['hostname']]['ansible_facts']['default_ipv4']['address'] }}
       {% endfor %}
     dest: "{{es_conf_dir}}/unicast_hosts.txt"
     owner: "{{es_user}}"
