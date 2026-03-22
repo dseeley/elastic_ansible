@@ -30,10 +30,10 @@ node.attr.zone: {{ hostvars[inventory_hostname]['regionzone'] }}
 
 # (https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-bootstrap-cluster.html#modules-discovery-bootstrap-cluster)
 # Technically this doesn't have to be set to all master-eligible nodes on all such nodes, if we don't mind the cluster being fault-intolerant during startup, and it's a pain to manage because it should be removed after cluster setup, and never added again.
-{%- if inventory_hostname == master_eligible_nodes[0]['hostname'] -%}
+{% if inventory_hostname == master_eligible_nodes[0]['hostname'] -%}
 cluster.initial_master_nodes: {{ inventory_hostname }}
-{%- endif %}
-# Alternate, if we want to do it properly, but we'd need another set of logic to remove this after install, and to prevent it being added ever again
+{% endif %}
+{## Alternate, if we want to do it properly, but we'd need another set of logic to remove this after install, and to prevent it being added ever again#}
 {#{%- if inventory_hostname in master_eligible_nodes | map(attribute='hostname') -%}#}
 {#cluster.initial_master_nodes: {{(master_eligible_nodes | map(attribute='hostname')) if (cluster_vars.dns_server is defined and cluster_vars.dns_server != "")  else  (master_eligible_nodes | map(attribute='ip'))}}#}
 {#{%- endif %}#}
