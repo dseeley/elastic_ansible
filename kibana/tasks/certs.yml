@@ -13,7 +13,7 @@
         key_usage_critical: true
         extended_key_usage: ["clientAuth", "serverAuth"]
         extended_key_usage_critical: true
-        subject_ordered: [ { CN: "{{ ansible_facts['default_ipv4']['address'] if (cluster_vars.dns_server is falsy or cluster_vars.dns_domain is falsy) else ansible_facts['hostname'] ~ '.' ~ cluster_vars.dns_domain}}" } ]
+        subject_ordered: [ { CN: "{{ ansible_facts['default_ipv4']['address'] if (cluster_vars.dns_server is falsy or cluster_vars.dns_domain is falsy) else ansible_facts['hostname'] | regex_replace('-(?!.*-).*') ~ '.' ~ cluster_vars.dns_domain}}" } ]
         use_common_name_for_san: false
         subject_alt_name: |-
           {%- set SANs = ['DNS:' + ansible_facts['hostname'],'IP:' + ansible_facts['default_ipv4']['address']] -%}

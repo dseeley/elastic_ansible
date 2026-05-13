@@ -6,9 +6,9 @@ canary: none
 canary_tidy_on_success: true
 
 update_os: false                                        # A variable passed to the cloud-init user-data script (or the startup-script for GCP), to indicate that it can run any user-defined run_cmd (apt-get -y dist-upgrade).
-omit_singleton_hosttype_from_hostname: true             # Don't need the hosttype in the hostname (e.g. 'mongo-dev-mongod-a0' vs 'mongo-dev-a0')
+omit_singleton_hosttype_from_hostname: false            # Don't need the hosttype in the hostname (e.g. 'mongo-dev-mongod-a0' vs 'mongo-dev-a0')
 
-app_name: "opensearch-{{lookup('pipe', 'whoami') | lower}}"      # The name of the application cluster (e.g. 'couchbase', 'nginx'); becomes part of cluster_name.  Provided is a default to ensure no accidental overwriting.
+app_name: "elasticsearch-{{lookup('pipe', 'whoami')[:2] + lookup('pipe', 'whoami')[-1:] | lower}}"      # The name of the application cluster (e.g. 'couchbase', 'nginx'); becomes part of cluster_name.  Provided is a default to ensure no accidental overwriting.
 
 cluster_name: "{{app_name}}-{{buildenv}}"               # Identifies the cluster within the cloud environment; becomes part of the hostname
 

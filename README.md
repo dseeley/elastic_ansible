@@ -6,7 +6,7 @@ This project is designed to operate using [**clusterverse**](https://github.com/
 
 ## Requirements
 + ansible-core >= 2.17.4 (pypi >= 10.4.0)
-+ See [docs/EXAMPLE/Dockerfile](https://github.com/clusterverse/clusterverse/blob/master/docs/EXAMPLE/Dockerfile) for a full list of dependencies.
++ See [docs/EXAMPLE/Dockerfile_nonroot](https://github.com/clusterverse/clusterverse/blob/master/docs/EXAMPLE/Dockerfile_nonroot) for a full list of dependencies.
 
 ## Example
 Please see the [EXAMPLE](https://github.com/clusterverse/elastic/tree/master/EXAMPLE) directory in this repository for some basic configuration.  This can be copied in the root directory, and used as a starting point for your own configuration.

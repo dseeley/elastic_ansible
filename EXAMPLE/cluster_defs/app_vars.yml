@@ -4,7 +4,7 @@ use_local_artifact: true
 
 playbook_ca_yaml: "{{playbook_dir}}/cluster_defs/{{ cloud_type }}/ssl_ca.yml"
 
-es_version: "9.3.0"
+es_version: "9.4.1"
 es_artifact_location: "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{es_version}}-linux-{{ansible_facts['architecture']}}.tar.gz"
 es_user: elasticsearch
 es_group: elasticsearch

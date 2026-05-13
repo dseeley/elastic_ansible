@@ -10,11 +10,13 @@
     privatekey_content: "{{r__openssl_privatekey_pipe.privatekey}}"
     key_usage: ["digitalSignature", "keyEncipherment", "nonRepudiation"]
     key_usage_critical: true
-    extended_key_usage: ["clientAuth", "serverAuth"]
+    extended_key_usage:
+      - serverAuth        # Required for HTTPS / transport
+      - clientAuth        # Required for node-to-node authentication
     extended_key_usage_critical: true
     subject_ordered:
       - { DC: "{{ cluster_vars.dns_domain }}" }
-      - { CN: "{{ ansible_facts['hostname'] ~ '.' ~ cluster_vars.dns_domain }}" }
+      - { CN: "{{ ansible_facts['hostname'] | regex_replace('-(?!.*-).*') ~ '.' ~ cluster_vars.dns_domain }}" }
     use_common_name_for_san: false
     subject_alt_name: |-
       {%- set SANs = ['DNS:' + ansible_facts['hostname'],'IP:' + ansible_facts['default_ipv4']['address']] -%}
